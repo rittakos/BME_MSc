@@ -4,7 +4,7 @@ P = projection(OTF, I);
 Noise = noise(Q, OTF, DQE, Nx, Ny, dx, dy);
 
 %figure('Name','Image','NumberTitle','off'), imshow(I, []);
-figure('Name','Projection','NumberTitle','off'), imshow(S, []);
+%figure('Name','Projection','NumberTitle','off'), imshow(S, []);
 figure('Name','Noise','NumberTitle','off'), imshow(Noise, []);
 
 img = P + Noise;
@@ -22,6 +22,6 @@ N = img(1:1840, 1:300);
 
 CNR = cnr(A, B, N);
 
-disp(CNR);
+%disp(CNR);
 
-save('02out.mat','S','Noise','CNR');
+save('02out.mat','P','Noise','CNR');
