@@ -5,7 +5,7 @@ Noise = noise(Q, OTF, DQE, Nx, Ny, dx, dy);
 
 %figure('Name','Image','NumberTitle','off'), imshow(I, []);
 %figure('Name','Projection','NumberTitle','off'), imshow(S, []);
-figure('Name','Noise','NumberTitle','off'), imshow(Noise, []);
+%figure('Name','Noise','NumberTitle','off'), imshow(Noise, []);
 
 img = P + Noise;
 %figure('Name','NoiseyImage','NumberTitle','off'), imshow(noisyImg, []);
