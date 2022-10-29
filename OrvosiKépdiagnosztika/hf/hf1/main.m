@@ -22,6 +22,6 @@ N = img(1:1840, 1:300);
 
 CNR = cnr(A, B, N);
 
-%disp(CNR);
+disp(CNR);
 
-save('02out.mat','P','Noise','CNR');
+save('02out.mat','P','Noise');
