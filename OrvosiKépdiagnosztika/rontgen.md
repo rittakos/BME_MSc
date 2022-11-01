@@ -184,3 +184,26 @@ Nem lesznek alacsony intenzitások a vetületekben.
 ### Foton éhezés
 
 Fém implantátumok szinte teljesen blokkolják a sugarat.
+
+<br><br/>
+
+# Ellenőrző kérdések
+
+## Vázlatosan ismertesse egy röntgen alapú képalkotó berendezés felépítését! Hogyan keletkezik a röntgen foton, mi határozza meg az energiáját? Mit nevezünk kollimátornak? Mit mond ki az inverz négyzetes törvény? Vázlatosan ismertesse, hogy miből áll egy röntgen detektor?
+
+xxx
+
+## Értelmezze a lentebbi összefüggést! Saját szavaival adj meg, hogy mit modellez? Monokromatikus röntgensugár esetén hogyan egyszerűsödik az összefüggés? Hogy nevezzük azt az artifaktot, mely abból ered, hogy hibásan monokromatikusnak feltételezzük a röntgensugarat?
+
+$$ \int {\int {I_0(E) * exp(- \mu(x(s), E))}ds}dE $$
+
+xxx
+
+
+##  Mi történik foto-elektromos kölcsönhatás, illetve Compton szóródás esetén? Milyen fizikai anyagok milyen jellegű interakcióit írják le ezek a jelenségek? Értelmezze a lentebb megadott összefüggést! Ez az előbb felsorolt két hatás közül melyiket írja le? Leginkább mely változótól függ ezen kölcsönhatás bekövetkezésének a valószínűsége? Mely energiatartományokban domináns a fentebb megnevezett két kölcsönhatás?
+
+$$ E_f = E_{he} + E_{eke} $$
+
+xxx
+
+## Mi a szcintilláció lényege? Milyen esetekben van rá szükség? Nevezzen meg egy konkrét ilyen esetet! Mi a sötétáram, valamint az erősítéskorrekció lényege? Mit nevezünk bakscatternek?
