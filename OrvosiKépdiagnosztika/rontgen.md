@@ -17,7 +17,7 @@ Feladata a sugárnyaláb szélességének korlátozása
 
 **Inverz négyzetes törvény**. Minél messzebb vagyunk a sugárnyaláb kiindulási ponjától, annák kevesebb sugár halad át egységnyi területen. A csökkenés a távolsággal négyzetesen arányos. Nem lesz egyenletes a detektorra vetülő sugár intenzitása, középen intenzívebb.
 
-$$ Intensity = \alpha {{1} \over {distance^2}} $$
+$$ Intensity = \propto {{1} \over {distance^2}} $$
 
 ### Detektor
 
