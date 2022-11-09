@@ -131,10 +131,9 @@ $A = LU$ **LU-felbontás** ha $L$ alsó egység háromszögmátrix $U$ felső h�
 
 Kiszámolása: 
 - U a felső háromszög mátrix
-- $L = \begin{vmatrix}
-1 & 0 & ... & 0\\
+- $L = \begin{vmatrix} 1 & 0 & ... & 0\\
 l_{21} & 1 &... & 0\\
-. & . & &.\\
+. & . & . &.\\
 l_{m1} & l_{m2} & ...& 1
 \end{vmatrix}$, ahol $l_{ij} = \frac{a_{ij}}{a_{jj}}$
 
@@ -149,7 +148,7 @@ $$G(v_1, v_2 ... v_k) = [\left< v_i, v_j \right>] = \begin{vmatrix}
 \left< v_1, v_1 \right> &  ... & \left< v_1, v_k \right>\\
 . & . & .\\
 \left< v_k, v_1 \right> & ...&  \left< v_k, v_k \right>
-\end{vmatrix}$$
+\end{vmatrix} $$
 
 # Pszeudo inverz
 
