@@ -131,11 +131,14 @@ $A = LU$ **LU-felbontás** ha $L$ alsó egység háromszögmátrix $U$ felső h�
 
 Kiszámolása: 
 - U a felső háromszög mátrix
-- $L = \begin{vmatrix} 1 & 0 & ... & 0\\
+  
+$$ L = \begin{vmatrix} 1 & 0 & ... & 0\\
 l_{21} & 1 &... & 0\\
 . & . & . &.\\
 l_{m1} & l_{m2} & ...& 1
-\end{vmatrix}$, ahol $l_{ij} = \frac{a_{ij}}{a_{jj}}$
+\end{vmatrix}$$
+
+, ahol $l_{ij} = \frac{a_{ij}}{a_{jj}}$
 
 **PLU felbontás**: $PA = LU$, azaz $A = P^TLU$, $P$ permutáló
 - nem csak négyzetes alakúakra
