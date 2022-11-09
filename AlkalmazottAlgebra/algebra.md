@@ -172,6 +172,43 @@ $A$ teljes oszlopranggú. $A=QR$ QR felbontás, ha $Q$ az $A$-val azonos méret�
 - határozzuk meg a nullteret kifeszítő vektorokat
 - adjuk hozza ezeket az gyenletrendszerhez és oldjuk meg
 - megkapjuk a sortérbe eső megoldást és azzal kifejezve az összeset
+
+$$ x+y+z+w=3 $$
+$$ x+y-z-w=1 $$
+
+A bővített mátrix és redukált lépcsős alakja:
+
+$$ \begin{vmatrix}
+1 & 1 & 1 & 1 & 3 \\
+1 & 1 & -1 & -1 & 1
+\end{vmatrix} \rightarrow  
+\begin{vmatrix}
+1 & 1 & 0 & 0 & 2 \\
+0 & 0 & 1 & 1 & 1
+\end{vmatrix} $$
+
+Oldjuk meg az egyenletrendszert:
+
+$$ \begin{vmatrix} x\\ y\\ x\\ w\\ \end{vmatrix}  = \begin{vmatrix} 2-s\\ s\\ 1-t\\ t\\ \end{vmatrix} = \begin{vmatrix} 2\\ 0\\ 1\\ 0\\ \end{vmatrix} + \begin{vmatrix} -1\\ 1\\ 0\\ 0\\ \end{vmatrix}s + \begin{vmatrix} 0\\ 0\\ -1\\ 1\\ \end{vmatrix}t $$
+
+A nullteret a $(-1,1,0,0)$, $(0,0,-1,1)$ vektrotok feszítik ki.
+
+Ezekkel egészítsük ki az egyenletrendszert:
+
+$$ \begin{vmatrix} 
+1 & 1 & 0 & 0 & 2\\ 
+0 & 0 & 1 & 1 & 1\\ 
+-1 & 1 & 0 & 0 & 0 \\ 
+0 & 0 & -1 & 1 & 0\\ \end{vmatrix} \rightarrow
+\begin{vmatrix} 
+1 & 0 & 0 & 0 & 1\\ 
+0 & 1 & 0 & 0 & 1\\ 
+0 & 0 & 1 & 0 & \frac12 \\ 
+0 & 0 & 0 & 1 & \frac12\\ \end{vmatrix} $$
+
+vagyis a sortérbe eső megoldás a $(1, 1, \frac12, \frac12)$, az összes megoldás:
+
+$$ \begin{vmatrix} x\\ y\\ x\\ w\\ \end{vmatrix}  = \begin{vmatrix} 1\\ 1\\ \frac12\\ \frac12\\ \end{vmatrix} + \begin{vmatrix} -1\\ 1\\ 0\\ 0\\ \end{vmatrix}s + \begin{vmatrix} 0\\ 0\\ -1\\ 1\\ \end{vmatrix}t $$
 	
 ## LU- vagy PLU-felbontás meghatározása, és azzal egy egyenletrendszer megoldása
 
@@ -184,13 +221,38 @@ PLU: $Ax = b \Leftrightarrow PAx = Pb \Leftrightarrow LUx = Pb \Leftrightarrow L
 	
 lád fentebb
 
+$$ A = \begin{vmatrix} 
+1 & 2 & 3 & 4 & 5\\ 
+2 & 4 & 8 & 6 & 2\\ 
+1 & 2 & 7 & 0 & -11 \\ \end{vmatrix} $$
+
+A redukált lépcsős alakban:
+
+$$ A = \begin{vmatrix} 
+1 & 2 & 0 & 7 & 17\\ 
+0 & 0 & 1 & -1 & -4\\ 
+0 & 0 & 0 & 0 & 0 \\ \end{vmatrix} $$
+
+ebből:
+
+$$ R = \begin{vmatrix} 
+1 & 2 & 0 & 7 & 17\\ 
+0 & 0 & 1 & -1 & -4\\ \end{vmatrix} $$
+
+$$ B = \begin{vmatrix} 
+1 & 3 \\ 
+2 & 8 \\ 
+1 & 7 \\ \end{vmatrix}  $$
+
+$$ A = BR $$
+
 ## altérbe eső merőleges vetület kiszámítása
 	
 $V$ egy euklideszi tér $W$ egy végesdimenziós altere, melynek $B = \lbrace v_1, v_2 ... v_k \rbrace$ bázisa, $v \in V$. Ekkor $proj_Wv = c_1v_1 + c_2v_k + ... + c_kv_k$, ahol a $c = (c_1, c_2, ... c_k)$  vektor a $Gc=b$ egyenletrendszer megoldása, $G$ a $B$ vektoraihoz tartozó Gram-mátrix és $[b]_i = \left< vi, v \right>$
 
 ## pszeudoinverz kiszámítása
 
-Ha a valós $A$ teljes oszlopreangú, akkor $A^+ = (A^TA)^{-1}A^T$, ha teljes sorrangú akkor $A^+ = A^T(AA^T)^{-1}$. Ha $A = BC$, $B$ teljes oszloprangú $C$ teljes sorrangú (bázisfelbontás), akkor $A^+ = C^+B^+$
+Ha a valós $A$ teljes oszloprangú, akkor $A^+ = (A^TA)^{-1}A^T$, ha teljes sorrangú akkor $A^+ = A^T(AA^T)^{-1}$. Ha $A = BC$, $B$ teljes oszloprangú $C$ teljes sorrangú (bázisfelbontás), akkor $A^+ = C^+B^+$
 
 ## GS-ortogonalizáció
 
@@ -200,8 +262,10 @@ Ortonormált rendszer $= \lbrace \frac{b_1}{|b_1|}, \frac{b_2}{|b_2|}, ... \frac
 
 $b_1 = a_1$ és 
 
-$$ b_{i+1} = a_{i + 1} \sum_{j=1}^i \frac{\left< b_j, a_{i + 1} \right>}{|b_j|^2}b_j $$
+$$ b_{i+1} = a_{i + 1} - \sum_{j=1}^i \frac{\left< b_j, a_{i + 1} \right>}{|b_j|^2}b_j $$
 
 ## QR-felbontás meghatározása, és abból egyenletrendszer megoldása, vagy  pszeudoinverz kiszámítása
+
+QR felbontás meghatározásához GS-ortogonalizációval meghatározható Q.
 
 $A=QR$ és $b \in \mathbb{R}^n$, ekkor $Ax = b$ egyenletrendszer egyetlen sortérbe eső optimális megoldása $\hat{v} = R^{-1}Q^Tb$ ami megkaoható a $R\hat v= Q^Tb$ egyenletrendszerből
