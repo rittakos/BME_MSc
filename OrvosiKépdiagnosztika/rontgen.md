@@ -44,7 +44,10 @@ Feltételezzük, hogy a spektrum egy vonalból áll (nehezen megoldható).
 
 **Beer-Lambert törvény**
 
+
 $$ I = I_0e^{- \mu x} $$
+
+
 - I: kilépő intenzitás
 - $I_0$: belépő intenzitás
 - $\mu$: lineáris csillapítási együttható
