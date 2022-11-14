@@ -159,7 +159,9 @@ Annak meghatározása, hogy a páciens testét reprezentáló voxelek (volume pi
 ### Linearizálás
 
 Beer-Lambert törtvény:
+
 $$ I_x = I_0e^{- \mu x} $$
+
 - $I_x$: intenzitás x vastagság után
 
 Linearizálás:
