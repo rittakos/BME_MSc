@@ -1,3 +1,7 @@
+# Architektúra hibák
+
+- 
+
 # Szolgáltatáshozzáférés és -konfiguráció
 
 - név, becenév
