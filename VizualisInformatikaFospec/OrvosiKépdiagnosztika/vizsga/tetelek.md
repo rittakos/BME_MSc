@@ -58,7 +58,7 @@
 
 --- 
 
-## T10. A Beer-Lambert törvény alapján röntgen rekonstrukciós eljárásoknak mi az első lépése, és miért szükséges ez a lépés? Definiálja formálisan a 2D Radon transzformációt! Mit mond ki a Fourier vetítősík tétel, hogyan alkalmazható rekonstrukciós eljárások esetén? Tömören ismertesse az FBP eljárás működését, és érveljen az eljárás helyessége mellett! FBP esetén hogyan lehetséges zajos projekciók kezelése? Hasonlítsa össze a Paralell-beam, a Fan-beam, és a Cone-beam sugár geometriájú készülékeket! Melyik eseté
+## T10. A Beer-Lambert törvény alapján röntgen rekonstrukciós eljárásoknak mi az első lépése, és miért szükséges ez a lépés? Definiálja formálisan a 2D Radon transzformációt! Mit mond ki a Fourier vetítősík tétel, hogyan alkalmazható rekonstrukciós eljárások esetén? Tömören ismertesse az FBP eljárás működését, és érveljen az eljárás helyessége mellett! FBP esetén hogyan lehetséges zajos projekciók kezelése? Hasonlítsa össze a Paralell-beam, a Fan-beam, és a Cone-beam sugár geometriájú készülékeket! Melyik esetében hogyan alkalmazható az FBP? 
 
 [kidolgozás](t10.md)
 
