@@ -1,0 +1,7 @@
+newmtl Tree_Dry_1:Tree_Dry_1_branches1
+Kd 1 1 1
+map_Kd Tree_Dry_1_branches_Diffuse.jpg
+newmtl Tree_Dry_1:Tree_Dry_2
+Kd 1 1 1
+map_Kd Tree_Dry_1_Diffuse2048.jpg
+map_Ka Tree_Dry_1_normal_Normal_Bump.jpg

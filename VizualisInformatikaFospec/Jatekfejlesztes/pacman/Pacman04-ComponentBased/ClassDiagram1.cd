@@ -1,0 +1,158 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" GroupingSetting="Access">
+  <Class Name="ConsolePlatformer.CollisionHandler">
+    <Position X="14.75" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAEAEA=</HashCode>
+      <FileName>Engine\CollisionHandler.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Component">
+    <Position X="6.5" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAIAAAIAAAAAAAAAAIBAAAAAECAAAAAAAACAAAQA=</HashCode>
+      <FileName>Engine\Component.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Renderer">
+    <Position X="5.5" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAEAAAAAAIAAAEAAAIAAAAAAAAAAAAAAAAAAQAAA=</HashCode>
+      <FileName>Engine\Component.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Collider">
+    <Position X="10" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gAAAAAAAAAAAAACAAAAAIAAAAAAAAAAAAAAAAAAAAQA=</HashCode>
+      <FileName>Engine\Component.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Game">
+    <Position X="18.25" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAgAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Engine\Game.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.GameObject">
+    <Position X="6.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>hAAAAKAAEAAAAAAEAgEAIFAAAAhAAAAAAAgAACAAAEA=</HashCode>
+      <FileName>Engine\GameObject.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Input">
+    <Position X="16.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAACAAAAAAAAAAAAAAAIAAAAAAAAAiAEgAA=</HashCode>
+      <FileName>Engine\Input.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.LevelLoader">
+    <Position X="18.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Engine\Level.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Level">
+    <Position X="16.5" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAgAAAAAAAJAAAAAAAAAAAAAAAEQAA=</HashCode>
+      <FileName>Engine\Level.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Vec2">
+    <Position X="14.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAIAAAAACAAAAAAAAAAAAAAAAAAAAAAABgAAACAAA=</HashCode>
+      <FileName>Engine\Vec2.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.CoinCollecComponent">
+    <Position X="1" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAACAAAAA=</HashCode>
+      <FileName>Game1\Coin.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Coin">
+    <Position X="3.25" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Game1\Coin.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Game1LevelLoader">
+    <Position X="18.75" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Game1\Game1LevelLoader.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.GUIDrawer">
+    <Position X="12.25" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAIAAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>Game1\GUI.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.GUI">
+    <Position X="10" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Game1\GUI.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.MonsterController">
+    <Position X="3.25" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgIAAAAAAAAAAAAAAABAAAAAAAAABAAAAACAAAAA=</HashCode>
+      <FileName>Game1\Monster.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Monster">
+    <Position X="5.5" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Game1\Monster.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.PlayerController">
+    <Position X="7.75" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgIAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Game1\Player.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Player">
+    <Position X="7.75" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Game1\Player.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.HWall">
+    <Position X="12.25" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Game1\Wall.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.Wall">
+    <Position X="1" Y="6.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Game1\Wall.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="ConsolePlatformer.MainClass">
+    <Position X="20.25" Y="2.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAA=</HashCode>
+      <FileName>Main.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
