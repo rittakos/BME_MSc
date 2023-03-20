@@ -36,9 +36,9 @@ $$|< f, g >|^2 \le < f,f >\cdot< g,g >$$
 
 Legyen $S$ egy megszámlálható halmaz (indexhalmaz). Legyen $\Omega \subset \mathbb{R}^d$ tartomány. Legyen $\mathbb F = \mathbb R/\mathbb C$.
 
-$$l^2(S, \mathbb F) = \left\lbrace a: S\rarr\mathbb F | \sum_{k\in S}|a_k|^2 < \infin\right\rbrace \rightarrow <a,b> = \sum_{k\in S} \overline a_kb_k$$
+$$l^2(S, \mathbb F) = \left\lbrace a: S\rightarrow\mathbb F | \sum_{k\in S}|a_k|^2 < \infty\right\rbrace \rightarrow <a,b> = \sum_{k\in S} \overline a_kb_k$$
 
-$$L^2(\Omega, \mathbb F) = \left\lbrace f: \Omega\rightarrow\mathbb F | \int_{\Omega}|f|^2 < \infin\right\rbrace_{/_{mm}} \rightarrow <f,g> = \int_{\Omega} \overline fg$$
+$$L^2(\Omega, \mathbb F) = \left\lbrace f: \Omega\rightarrow\mathbb F | \int_{\Omega}|f|^2 < \infty\right\rbrace_{/_{mm}} \rightarrow <f,g> = \int_{\Omega} \overline fg$$
 
 $L^2$ és $l^2$ skalár szorzatos teret alkotnak (vektorterek).
 
