@@ -6,9 +6,9 @@
 
 ## Skaláris szorzat
 
-Legyen $V$ egy vektortér $\mathbb{F} = \mathbb R/ \mathbb{C}$ felett. A $<,>: V\times V \rightarrow \mathbb{F}$ leképezést akkor nevezzük **skaláris szorzat**nak ha: $\forall$ $v,w_1,w_2\in V$,$\lambda_1, \lambda_2 \in \mathbb{F}$:
-- $<v,w> = \overline{<w,v>}$    (konjugált)
-- $<v, \lambda_1 w_1 + \lambda_2 w_2> = \lambda_1<v, w_1> + \lambda_2<v,w_2>$
+Legyen $V$ egy vektortér $\mathbb{F} = \mathbb R/ \mathbb{C}$ felett. A $<,>: V\times V \rightarrow \mathbb{F}$ leképezést akkor nevezzük **skaláris szorzat**nak ha: $\forall$ $v,w_1,w_2\in V$, $\lambda_1, \lambda_2 \in \mathbb{F}$:
+- $< v,w > = \overline{< w,v >}$    (konjugált)
+- $< v, \lambda_1 w_1 + \lambda_2 w_2 > = \lambda_1< v, w_1 > + \lambda_2< v,w_2 >$
 - $<v,v> \ge 0$, egyenlőség akkor és csakakkor, ha $v=0/_{mm}$ (majdnem mindenütt)
 
 A $V$ tér egy rögzített skaláris szorzattal **skalár szorzatos tér**.
