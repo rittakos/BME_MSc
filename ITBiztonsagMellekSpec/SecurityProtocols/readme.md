@@ -269,7 +269,24 @@ $Pr(Y_i = Y_j) = 1-P_k$, ahol $P_k = \frac{N-1}{N} \frac{N-2}{N} ... \frac{N-k+1
 ### How do key transport protocols ensure the secrecy of the established key?
 ### How is key authenticity achieved?
 ### What methods do you know for providing key freshness? Explain how they work, and what their advantages and disadvantages are!
+    A felek által adott kontribúcióból számolódik valamilyen egyirányú függvénnyel. Mivel a függvény egyirányú, ezért nem található egy rögzített input mellé a másik input az output alapján. Ez alapján ha az egyik fél friss kontribúciót használ, akkor a kulcs is friss lesz.
+    A frissességnek mindkét fél által megállapíthatónak kell lennie.
+
+    - Időpecsétek használata:
+    az egyik fél beleteszi a kulcs generálásakor az aktuális időpecsétet az üzenetbe, ezzel együtt generálódik a MAC, az a másik fél által ellenőrizhető.
+    Előny: kevés üzenet
+    Hátrány: Továbbra is lehetséges a visszajátszás az elfogadási ablakban, amikor a felek nem túl réginek ítélik az időpecsétet. Tehát a feleknek a replay üzeneteket ki kell szűrniük -> a felek emlékezhetnek az elfogadási időn belül kapott üzenetekre (mivel így csak limitált üzenetre kell emlékezni, ezért az üzenetek mentése most megengedhető). 
+    Az óráknak szinkronizálva kell lenniük! A szinkronizálás is biztonsági feladat, ami nem triviális feladat (időszerverrel való kommunikáció időpecsétek nélkül).
+    A késő és siető órák is gondot okozhatnak.
+    - Véletlen nonce-ok használata:
+    Frissen generált véletlen szám elküldése a harmadik félnek, aki generálja a kulcsot, és visszaküldi a feleknek, MAC-cel hitelesítve.
+    Akkor fogadják el a felek a kulsot frissnek, ha a válaszüzenet bizonyos időablakon belül érkezik meg.
+    Ha a MAC-ben benne van a véletlen szám, bizonyítja, hogy nem keletkezhetett korábban, mint a véletlen szám.
+    Előny: nincs szükség órák szinkronizálására
+    Hátrány: több üzenetből állnak, és ideiglenes állapotot kell tárolni a feleknek (melyik partnerrel milyen nonce-t használt), a nonce-nak nem predikálhatónak kell lennie
+
 ### What is perfect forward secrecy?
+    Ha a felek törlik azokat a titkokat, amikre már nincs szüksége, akkor elvárható lehet, hogy ha egy támadó megszerez egy kulcsot, akkor azzal a korábbi üzeneteket nem tudja visszafejteni.
 
 ---
 
