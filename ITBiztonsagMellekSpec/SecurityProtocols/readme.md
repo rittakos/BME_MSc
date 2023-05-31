@@ -266,8 +266,18 @@ $Pr(Y_i = Y_j) = 1-P_k$, ahol $P_k = \frac{N-1}{N} \frac{N-2}{N} ... \frac{N-k+1
     A támadó lehallgatta a protokolt.
 
 ### What kind of attacks do you know against key exchange protocols?
+    ![](img/keySecAttack.png)
+    ![](img/keyAuthAttack.png)
+
 ### How do key transport protocols ensure the secrecy of the established key?
+    Cél: Amikor a protokoll sikeresen lefut, más feleknek nem szabad megtudnia a létrehozott kulcsot.
+    Üzenetek sérthetetlenségét kell biztosítani. MAC érték használatával megakadályozható az üzenet módosítás és a más nevében üzenetek küldése. A MAC létrehozása az egyes felek aláírásával történik, így biztosítható, hogy az küldi, aki aláírja. Így nem tud a támadó Alice nevében magának üzenetet küldeni, hogy megszerezze a kulcsot.
+
 ### How is key authenticity achieved?
+    Cél: Amikor protokoll sikeresen lefut, és mindkét fél azt gondolja, hogy a protokoll lefutása és a kulcs létrehozása után a másik féllel létesített kapcsolatot. A két oldalon matching protokoll futások vannak.
+    Üzenetek sérthetetlenségét kell biztosítani. MAC érték használatával megakadályozható az üzenet módosítás és a más nevében üzenetek küldése. A MAC létrehozása az egyes felek aláírásával történik, így biztosítható, hogy az küldi, aki aláírja. Így nem tudja a támadó Bob nevében aláírni az üzenetet, hogy Bob azt higgye, Alice-cel beszél.
+
+
 ### What methods do you know for providing key freshness? Explain how they work, and what their advantages and disadvantages are!
     A felek által adott kontribúcióból számolódik valamilyen egyirányú függvénnyel. Mivel a függvény egyirányú, ezért nem található egy rögzített input mellé a másik input az output alapján. Ez alapján ha az egyik fél friss kontribúciót használ, akkor a kulcs is friss lesz.
     A frissességnek mindkét fél által megállapíthatónak kell lennie.
