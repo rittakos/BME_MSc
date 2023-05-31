@@ -58,3 +58,26 @@ $V$ tér egy rögzített normával **normált tér**.
 ---
 
 ## Ortogonalitás
+
+$V$, skalárszorzatos tér. 
+- $v, w\in V$ merőlegesek (ortogonálisak) ($v \perp w$), ha $<v, w> \ge 0$ és $<v,v> = 0$
+- $\sigma, \sigma_1, \sigma_2 \subset V:$ $\sigma_1 \perp \sigma_2$, ha $\forall v\in\sigma_1, w\in\sigma_2:v\perp w$
+- $\sigma^{\perp} = \left\lbrace v\in V | \forall w \in\sigma : v \perp w\right\rbrace$
+
+Tulajdonságai:
+- $v \perp w \Leftrightarrow w \perp v$
+- $\sigma_1 \subset \sigma_2 \Rightarrow \sigma_2^\perp \subset \sigma_1^\perp$
+- $\sigma \subset\left(\sigma^\perp\right)^\perp$
+- $\sigma^\perp$ mindig altér
+
+### ONS: OrtoNormált Rendszer
+$e_\alpha \in V(\alpha \in I)$, $<e_\alpha, e_\beta> = \left\lbrace1: \alpha=\beta, 0: \alpha\not=\beta\right\rbrace$
+
+Ha $e_\alpha$ ONS, akkor lineárisan függetlenek.
+
+**ONB**: OrtoNormált Bázis: ONS ami bázis is, kifeszíti a teret.
+
+Legyen $e_1...e_n$ ONS $V$-ben, $v \in V$. Ekkor $v_{||} = \sum\limits_{k=1}^{n}<e_k, v>e_k \in U=Span\lbrace e_1...e_n\rbrace$(kifeszít) és $v-v_{||} \in U^\perp$. $v_{||} v$ vetülete $U$-ra.
+
+A $v_{||}$ vetített vektorra: $\forall u\in U, ||v - u|| \ge ||v-v_{||}||$, egyenlőség, ha $v=v_{||}$.
+
