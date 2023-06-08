@@ -60,7 +60,7 @@ $V$ tér egy rögzített normával **normált tér**.
 ## Ortogonalitás
 
 $V$, skalárszorzatos tér. 
-- $v, w\in V$ merőlegesek (ortogonálisak) ($v \perp w$), ha $<v, w> \ge 0$ és $<v,v> = 0$
+- $v, w\in V$ merőlegesek (ortogonálisak) ($v \perp w$), ha $<v, w> = 0$ és $<w,v> = 0$
 - $\sigma, \sigma_1, \sigma_2 \subset V:$ $\sigma_1 \perp \sigma_2$, ha $\forall v\in\sigma_1, w\in\sigma_2:v\perp w$
 - $\sigma^{\perp} = \left\lbrace v\in V | \forall w \in\sigma : v \perp w\right\rbrace$
 
