@@ -1,0 +1,15 @@
+Security Protocols
+Homework 1 / Challenge 5
+
+Name/Neptun:
+
+===============================================
+Display Control (4 points)
+-----------------------------------------------
+
+The displayed message:
+<copy here the message printed on the display>
+
+Briefly explain how you solved the challenge:
+
+

@@ -1,0 +1,73 @@
+Biztonsági protokollok ZH, 2023 tavaszi félév
+2023. június 1.
+
+Név, neptun: Rittgasszer Ákos, Z8WK8D
+
+(minden kérdés 4 pontot ér, összes lehetséges pont: 60, rendelkezésre álló idő: 80 perc)
+
+
+1. 	Hogyan történik a kulcsfolyam rejtjelezőkben a kulcsfolyam generálása (általános felépítés)? Miért fontos, hogy a generator belső állapottere nagy legyen? 
+	A kulcsfolyam generálása véletlenszerűen működik, sokszor pszeudo random generátort használva. 
+	Ha nem elgé nagy a belső állapottér, akkor könnyebben kikövekeztethető a kulcsfolyam.
+
+2.	Miért van szükség blokkrejtjelezési módokra? Hogyan működik a CBC mód (rejtjelezés és dekódolás)?
+	Hogy bonyolítsák a rejtjelezést, nehezebben legyen feltörhető. A CBC blokkonként rejtjelez és kap egy IV bemeneti paramétert, aminek hossza azonos a blokk hosszával. 
+	Az első blokk rejtjelezéséből kapjuk a második blokk IV-jét és így tovább. Az egyes blokkok rejtjelezéséből áll össze a kódolt üzenet.
+	A visszafejtéshez szükséges az IV amit általában elküldünk titkosítva az üzenet részeként. Ugyanúgy blokkonként történik a rejtjelezés megfordításaként.
+
+
+3.	Mi az a Kerkchoff-elv? Miért veszélyes, ha valaki nem követi ezt az elvet?
+	A kriptográfiai algoritmusokat úgy kell megalkotni, hogy azt vesszük tényként, hogy a támadó ismeri a belső működést/implementációt.
+	Ha ezt nem követjük, akkor arra is figyelni kell, hogy az implementáció is titkosítva legyen, ez növeli a feladat nagyságát és növekszik annak az esélye, hogy hibázunk.
+	Valamint nagyobb támadási felületet biztosít.
+
+4.	Mit nevezünk kriptográfiai hash függvénynek? Mi a kriptográfiai hash függvényekkel kapcsolatos  3 fő biztonsági követelmény? Melyik a legerősebb (legnehezebben teljesíthető) követelmény és miért?
+	Olyan függvény ami tetszőleges hosszúságú bemenetekhez fix hosszú kimenetet rendel.
+	A hash függvénynek gyorsnak kell lennie, nem szabad, hogy könnyen visszafejthető legyen illetve kicsi valószínűséggel tartozzon különböző bemenetekhez azonos kimenet.
+	Legnehezebben az utolsó teljesíthető, mivel a fix kimenet hossz miatt a kimenetek száma korlátos, viszont a bemenetek száma elvileg végtelen(gyakorlatban csak nagyon sok).
+
+5.	Miben különbözik egy MAC függvény egy hash függvénytől? MAC függvények esetén mik lehetnek egy támadó céljai és képességei? Mik az ezekből fakadó elvárt biztonsági tulajdonságok, amiket egy MAC függvénynek illik teljesíteni?
+	A MAC függvény kap egy kulcsot is, amit felhasznál a kimenet számolásához.
+	A kulcs kiderítése, a kimenet alapján a bemenet meghatározása.
+	A MAC kulcsa legyen megfelelő komplexitású, hogy brute force-szal se lehessen egy bemenet-kimenet pár alapján meghatározni a kulcsot.
+	Az elöbb felsorolt hash-re jellemző követelményeknek is feleljen meg.
+
+6.	Mi az a hitelesített rejtjelezés (authenticated encryption)? Adja meg a MAC függvény és rejtjelezés lehetséges generikus kombinációit! Melyik a legbiztonságosabb kombináció és miért?
+	Elöbb a rejtjelezés majd a MAC, vagy elöbb a MAC utána a rejtjelezés.
+	Az utóbbi. Elöbb generálunk MAC-et majd utána rejtjelezzük a megadott módon.
+
+7.	Hogyan védekezhetünk üzenet-visszajátszás támadás ellen? Mi a különbség az explicit és az implicit sorszámozás között? Hogyan használjuk a sorszámozást egy nem megbízható hálózatban (ahol az üzenetek nem feltétlenül az elküldés sorrendjében érkeznek meg)? 
+	Sorszámokkal látjuk el az üzenetet. Explicit esetben a sorszámokat csak szigorúan monoton növekvő sorrendben fogadja el és a rosszakat eldobja.
+	Implicit esetben kevésbé szigorúan dobálja el az üzeneteket.
+	Ablakozással. Az adott hosszú ablakon belüli sorszámokat fogadja el, ahol az ablak vége a legnagyobb sorszám amit kaptunk.
+
+8.	Milyen nehéz matematikai problémák (nem csak egy!) kötődnek az RSA publikus kulcsú rejtjelező rendszerhez? Ne csak megnevezze ezeket, hanem adjon rövid definíciót is!	
+	Prímtényezős felbontás. Két nagy prímszám keresése és azok összeszorzása egyszerű, az a nehézség, hogy ha van egy ilyen szorzatunk, akkor adjuk meg melyik prímek szorzata.
+	Logaritmus számolási probléma.
+
+9. 	Definiálja a kulcscsere protokollok fő tervezési céljait! Mit feltételezünk a támadóról kulcscsere protokollok esetén (mire képes és mire nem, mik lehetnek a céljai)?
+	A felek között szeretnénk egy kulcsot megosztani, úgy hogy mindkét fél úgy gondolja, hogy a protokol sikeres volt és mindenkinél a legfrissebbb kulcs van. 
+	Azt feltételezzük, hogy a támadó képes lehallgatni az üzeneteket. Célja lehet, a kulcs megszerzése és hogy más nevében tudjon üzenetet(kulcsot) küldeni.
+
+10. Milyen módszereket ismer a kulcsfrissesség biztosítására kulcscsere protokollokban? Mik az előnyei és a hátrányai az egyes módszereknek?
+	Időbéjeget: A üzeneteket időbéjeggel látjuk el, így ismert a frissességük. Előnye, hogy egyszerű, hátránya, hogy nő az üzenet mérete és szinkronizálni kell a felek óráit.
+	Random számmal: Egy random számot csatolunk az üzenethez, amit a fogadó ismer, így az üzenet nem érkezhet a szám generálása elött, ha pedig sokkal később érkezik akkor is eldobjuk.
+	Előnye, hogy nem nagyon nő a csomag mérete, hátránya, hogy a random számot ismernie kell a fogadónak is.
+	RSA segítségével: Bonyolult, de biztonságos
+
+11. Hogyan működik az RSA alapú kulcscsere a TLS v1.2 Handshake protokollban? A protokoll mely üzenetei kerülnek átvitelre és mi a tartalmuk (vázlatosan) a következő 2 esetben: (a) a szerver tanúsítványa egy RSA rejtjelező kulcsot tartalmaz, (b) a szerver tanúsítványa egy DSA aláírás-ellenőrző kulcsot tartalmaz? 
+
+
+12.	Mi a padding orákulum támadás két nehézsége a gyakorlatban a TLS Record protokoll esetén (mikor blokkrejtjelezőt használunk CBC módban)? Hogyan oldhatja meg egy támadó ezeket a nehézségeket? 
+	Az orakulum képes megmondani, hogy egy padding helyes-e vagy sem. 
+
+13.	Mit jelent az, hogy a CRC függvény lineáris az XOR műveletre nézve (adja meg a megfelelő képletet) és hogyan lehet ezt kihasználni az integritásvédelem támadására a WEP (WiFi) protokollban? Ehhez röviden magyarázza el, hogyan működne az eredeti elképzelés szerint az integritásvédelem a WEP-ben, és hogyan lehet ezt támadni a CRC függvény linearitása miatt!
+	Mindegy, hogy elöbb végezzük a CRC függvényt vagy a xor-t: CRC(a xor b) = CRC(a) xor CRC(b).
+
+14. A elektronikus aláírást (dokumentumok vagy szoftverek esetén) gyakran használjuk időpecséttel együtt. Mit jelent ez és mi ennek az oka?
+	Az aláírás tartalmaz egy időbéjeget az aláírás időpontjáról. Segít az aláírás helyességének ellenőrzésében.
+	Gátolja, hogy visszamenőleg írjunk alá. Az is visszakövethető, hogy az aláírás megtörtént-e a határisőig.
+
+15.	Magyarázza el a MIX fogalmát (anonim kommunikációs rendszerekben)! Milyen anonimitási tulajdonságokat biztosít a MIX (mit rejt és ki elől)? Hogyan lehet egy MIX-kaszkádot implementálni publikus kulcsú rejtjelezés (pl. RSA) segítségével?
+
+

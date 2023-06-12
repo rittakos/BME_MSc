@@ -1,0 +1,47 @@
+Salsa20 and the closely related ChaCha are stream ciphers developed by Daniel J. Bernstein. Salsa20, the original cipher, was designed in 2005, then later submitted to the eSTREAM European Union cryptographic validation process by Bernstein. ChaCha is a modification of Salsa20 published in 2008. It uses a new round function that increases diffusion and increases performance on some architectures.[4]
+
+Both ciphers are built on a pseudorandom function based on add-rotate-XOR (ARX) operations — 32-bit addition, bitwise addition (XOR) and rotation operations. The core function maps a 256-bit key, a 64-bit nonce, and a 64-bit counter to a 512-bit block of the key stream (a Salsa version with a 128-bit key also exists). This gives Salsa20 and ChaCha the unusual advantage that the user can efficiently seek to any position in the key stream in constant time. Salsa20 offers speeds of around 4–14 cycles per byte in software on modern x86 processors,[5] and reasonable hardware performance. It is not patented, and Bernstein has written several public domain implementations optimized for common architectures.[6]
+
+eSTREAM selection of Salsa20
+
+Salsa20 has been selected as a Phase 3 design for Profile 1 (software) by the eSTREAM project, receiving the highest weighted voting score of any Profile 1 algorithm at the end of Phase 2.[9] Salsa20 had previously been selected as Phase 2 Focus design for Profile 1 (software) and as a Phase 2 design for Profile 2 (hardware) by the eSTREAM project,[10] but was not advanced to Phase 3 for Profile 2 because eSTREAM felt that it was probably not a good candidate for extremely resource constrained hardware environments.[11]
+
+Cryptanalysis of Salsa20
+
+As of 2015, there are no published attacks on Salsa20/12 or the full Salsa20/20; the best attack known[3] breaks 8 of the 12 or 20 rounds.
+
+In 2005, Paul Crowley reported an attack on Salsa20/5 with an estimated time complexity of 2165, and won Bernstein's US$1000 prize for "most interesting Salsa20 cryptanalysis".[12] This attack, and all subsequent attacks are based on truncated differential cryptanalysis. In 2006, Fischer, Meier, Berbain, Biasse, and Robshaw reported an attack on Salsa20/6 with estimated time complexity of 2177, and a related-key attack on Salsa20/7 with estimated time complexity of 2217.[13]
+
+In 2007, Tsunoo et al. announced a cryptanalysis of Salsa20 which breaks 8 out of 20 rounds to recover the 256-bit secret key in 2255 operations, using 211.37 keystream pairs.[14] However, this attack does not seem to be competitive with the brute force attack.
+
+In 2008, Aumasson, Fischer, Khazaei, Meier, and Rechberger reported a cryptanalytic attack against Salsa20/7 with a time complexity of 2153, and they reported the first attack against Salsa20/8 with an estimated time complexity of 2251. This attack makes use of the new concept of probabilistic neutral key bits for probabilistic detection of a truncated differential. The attack can be adapted to break Salsa20/7 with a 128-bit key.[3]
+
+In 2012, the attack by Aumasson et al. was improved by Shi et al. against Salsa20/7 (128-bit key) to a time complexity of 2109 and Salsa20/8 (256-bit key) to 2250.[15]
+
+In 2013, Mouha and Preneel published a proof[16] that 15 rounds of Salsa20 was 128-bit secure against differential cryptanalysis. (Specifically, it has no differential characteristic with higher probability than 2−130, so differential cryptanalysis would be more difficult than 128-bit key exhaustion.)
+
+ChaCha variant
+
+In 2008, Bernstein published the closely related ChaCha family of ciphers, which aim to increase the diffusion per round while achieving the same or slightly better performance.[17] The Aumasson et al. paper also attacks ChaCha, achieving one round fewer: for 256 bits ChaCha6 with complexity 2139 and ChaCha7 with complexity 2248. 128 bits ChaCha6 within 2107, but claims that the attack fails to break 128 bits ChaCha7.[3]
+
+XChaCha
+
+Although not announced by Bernstein, the security proof of XSalsa20 extends straightforwardly to an analogous XChaCha cipher. Use the key and the first 128 bits of the nonce (in input words 12 through 15) to form a ChaCha input block, then perform the block operation (omitting the final addition). Output words 0–3 and 12–15 (those words corresponding to non-key words of the input) then form the key used for ordinary ChaCha (with the last 64 bits of nonce and 64 bits of block counter).[21]
+
+ChaCha20 adoption
+
+Google had selected ChaCha20 along with Bernstein's Poly1305 message authentication code in SPDY, which was intended as a replacement for TLS over TCP.[22] In the process, they proposed a new authenticated encryption construction combining both algorithms, which is called ChaCha20-Poly1305. ChaCha20 and Poly1305 are now used in the QUIC-protocol, which replaces SPDY and is used by HTTP/3.[23][24]
+
+Shortly after Google's adoption for TLS, both the ChaCha20 and Poly1305 algorithms were also used for a new chacha20-poly1305@openssh.com cipher in OpenSSH.[25][26] Subsequently, this made it possible for OpenSSH to avoid any dependency on OpenSSL, via a compile-time option.[27]
+
+ChaCha20 is also used for the arc4random random number generator in FreeBSD,[28] OpenBSD,[29] and NetBSD[30] operating systems, instead of the broken RC4, and in DragonFly BSD[31] for the CSPRNG subroutine of the kernel.[32][33] Starting from version 4.8, the Linux kernel uses the ChaCha20 algorithm to generate data for the nonblocking /dev/urandom device.[34][35][36]
+
+An implementation reference for ChaCha20 has been published in RFC 7539. The IETF's implementation modified Bernstein's published algorithm by changing 64-bit nonce and 64-bit block counter to 96-bit nonce and 32-bit block counter,[37] The name was not changed when the algorithm was modified, as it is cryptographically insignificant (both form what a cryptographer would recognize as a 128-bit nonce), but the interface change could be a source of confusion for developers. Because of the reduced block counter, the maximum message length that can be safely encrypted by the IETF's variant is 232 blocks of 64 bytes (256 GiB). For applications where this is not enough, such as file or disk encryption, RFC 7539 proposes using the original algorithm with 64-bit nonce.
+
+Use of ChaCha20 in IKE and IPsec have been proposed for standardization in RFC 7634. Proposed standardization of its use in TLS is published as RFC 7905.
+
+ChaCha20 usually offers better performance than the more prevalent Advanced Encryption Standard (AES) algorithm on systems where the CPU does not feature AES acceleration (such as the AES instruction set for x86 processors). As a result, ChaCha20 is sometimes preferred over AES in certain use cases involving mobile devices, which mostly use ARM-based CPUs.[38][39]
+
+In 2018, RFC 7539 was obsoleted by RFC 8439.[40]
+
+ChaCha20 is the exclusive algorithm used by the WireGuard VPN system, as of protocol version 1.[41]

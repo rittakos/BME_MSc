@@ -1,0 +1,42 @@
+Security Protocols
+Homework 1 / Challenge 3
+
+Name/Neptun: Rittgassze Ákos/Z8WK8D
+
+===============================================
+CFB with Small Blocks (4 points)
+-----------------------------------------------
+
+Recovered personal data (use ? for letters that you could not recover):
+
+Name: J?hn Adams
+Address: 3??0 ?rving?A?e?S
+City: M?nne??o?i?
+Postal code: MN 554??
+
+Továbbá utánajárás és józan ész használatával az alábbiakat lehetett megsejteni:
+
+Name: John Adams
+Address: 3??0 Irving Ave S
+City: Minneapolis
+Postal code: MN 554??
+
+Briefly explain how you solved the challenge:
+
+A CBC támadásos levezetéshez hasonlóan:
+
+Yi = E(Xi) + Yi-1
+Yj = E(Xj) + Yj-1
+
+Ha Yi-1 = Yj-1 akkor, Xi+Xj = Yi+Yj amiből ha ismert Xi akkor Xj = Xi + Yi + Yj
+
+Olyan a ? részeket keresünk amiknél a kódolt állapotban az elöttük levő bokkal van olyan azonos blokk 
+amit követő blokkank ismert az valós tartalma.
+
+Egy script segítségével megkerestem az olyan kódol Yi-1 és Yj-1 értékeket amik azonosak
+és az eredeti szövegben ? szerepel a j. helyen. Ezekre alkalmaztam az elöbbi képletet.
+Esetleg többszörös futtatás a már kitalált értékek figyelembe vételével növelheti
+a megtalált karakterek számát. 
+
+Az eredményt az internet segítségével egészítettem ki.
+

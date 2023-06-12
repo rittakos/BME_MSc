@@ -1,0 +1,25 @@
+Security Protocols
+Homework 1 / Challenge 2
+
+Name/Neptun: Rittgasszer Ákos / Z8Wk8D
+
+===============================================
+Breaking the MD5x3 cipher (4 points)
+-----------------------------------------------
+
+The discovered key:
+a0b1c23d4e5f
+
+
+Briefly explain how you solved the challenge:
+
+A kódolandó szót egy lépésig titkosítottam minden lehetséges kulccsal (2 byte). 
+A kódolt szót visszafele kódoltam szintén minden lehetséges kulccsal.
+A két eredményt elmentettem egy-egy tömbbe. 
+A két tömb összes elemét összehasonlítottam egymással. 
+Az egyezés megadta a végső kulcs (6 byte) első és utoló harmadát.
+A középső harmad kitalálásához kipróbáltam minden lehetséges iterációt.
+Az eredmény összeáll a megkapott három részből.
+
+
+Attach, in a separate file, your attack script that performs your attack and prints out the discovered key.

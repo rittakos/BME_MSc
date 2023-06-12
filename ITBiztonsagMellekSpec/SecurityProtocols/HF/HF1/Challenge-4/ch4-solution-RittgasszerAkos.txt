@@ -1,0 +1,29 @@
+Security Protocols
+Homework 1 / Challenge 4
+
+Name/Neptun:Rittgasszer Ákos / Z8WK8D
+
+===============================================
+XOR-MAC (4 points)
+-----------------------------------------------
+
+Your fake transaction:
+2031:02:01|11:23:39|21451|A74635|B29846|10003500
+
+Please, also attach your fake transaction as .txt file of the exact same format as the original transaction such that we can verify it with our command line verification program.
+
+Briefly explain how you solved the challenge:
+
+A kódolandó üzenet 3 részre bontódik és azokat kell XOR-olni. 
+Ameddig az eredmény változatlan, addig szabadon lehet változtatni az üzenetet.
+A lényeg, hogy ha valamelyik blokk valamelyik jegyét változtatom, 
+akkor pontosan egy másik blokkban az ugyanannyiadik jegyed növeljem vagy csökkentsem
+mondjuk 1-gyel. 
+
+Az én megoldásomban növeltem az évben a 2-t 3-ra, 
+ezért növeltem a másodpercben a 8-at 9-re. Ezen kívül a tranzakció számában
+növeltem a 0-t 1-re ezért növeltem az összeg első 0-ját is egyre.
+
+A Xor-olás eredményének helyességén kívül még arra kellett figyelni, 
+hogy a módosított részek továbbra is érvényesek maradjanak.
+

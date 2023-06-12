@@ -1,0 +1,104 @@
+Biztonsági protokollok ZH, 2023 tavaszi félév
+2023. június 6.
+
+Név, neptun: Rittgasszer Ákos, Z8WK8D
+
+
+(minden kérdés 4 pontot ér, összes lehetséges pont: 60, rendelkezésre álló idő: 80 perc)
+
+
+1. Hogyan működik a one-time pad rejtjelező? Mit jelent intuitíve a tökéletes titkosítás (perfect secrecy) tulajdonság?
+	Az üzenet byte-jait egy valódi random byte sorozattal xor-olunk. Visszafejtéshez ugyanezt a műveletet hajtjuk végre.
+	A kódolt üzenet nem rejt semmiféle utalást vagy információt az eredetire nézve.
+
+
+2. Magyarázza el a blokkrejtjelezővel történő dupla titkosítás (double encryption) elleni Meet-in-the-Middle támadást! Mekkora a brute force kulcskeresés remélt bonyolultsága dupla titkosítás esetén, és mekkora a valós bonyolultság a Meet-in-the-Middle támadás miatt?   
+	Úgy működik, hogy két irányból próbálkozunk. Legeneráljuk a bemenethez tartózó első titkosítás összes eredményét, illetve visszafejtjük az eredménybőlű
+	a második titkosítás bemenetét. Vagyis a két irányból ugyanazt az eredményt szeretnénk kapni. Ha a két irányból kapott lehetőségeket összehasonlítjuk,
+	akkor egyezés esetén megkpjuk az első és a második titkosítás kulcsát.
+	A kettős titkosítás sima brute force-olása esetén 2^2k lehetőséget kell kipróbálni, ha a kulcs k bit hosszú. A Meet-in-the-middle
+	támadás esetén 2*2^k lehetőséget kell kipróbálni, majd ezeket még összehasonlítani, O(k^2) nehézséggel.
+
+
+3. Miért van szükségünk blokkrejtjelezési módokra? Hogyan működik a CTR blokkrejtjelezési mód (mind a titkosítás, mind a visszafejtés)?
+	Azért mivel a rejtjelezésnél, ha minden blokkot ugyanazzal a kulccsal titkosítunk, akkor az azonos blokkoknak azonos kimenete lesz.
+	Ennek elkerülésére lehet a különböző módokat, amik még további paramétertől teszik függővé a kódolást.
+	A CTR mód egy blokkjának rejtjelezéséhez szükség van a bemeneti blokkra, a kulcsra és egy ctr értékre, a ctr hossza azonos a blokk hosszával.
+	Titkosításkor blokk kulcsal történő kódolásához adjuk hozzá a ctr értéket.
+	A ctr értékek generálás úgy történik, hogy az elsőt véletlenszerűen generáljuk, majd a továbbiakhoz ezt növeljük.
+	Visszafejtéshez szükség a van a titkosított blokkra, kulcsra és a ctr-re és ugyanazon a módon működik mint a titkosítás.
+
+
+4. Milyen fajta támadó modellhez tartozik a padding orákulum támadás? Mi a padding orákulum támadás lényege? Mi a padding orákulum támadás bonyolultsága megközelítőleg?
+	Létezik egy olyan orákulum ami ismeri a kulcsot és meg tudja mondani egy bemenetre, hogy a rajta levő padding helyes-e.
+	Veszünk egy blokkot és ezt beadjuk az orákulumnak, valószínűleg hibás paddinget jelez. 
+	Elkezdjük növelni a blokk értékét. Egyszer csak helyes lesz a padding. Ha hosszabb a padding akkor kiderítjük a hosszát. 
+	Ezen módon mindenig a helyes padding-et keresve megkapjuk a blokkot.
+	Bonyolultságát nézve mivel próbálgatással működik ezért n bit próbálgatása esetén 2^k esetet kell legrosszabb esetben vizsgálni.
+	n értéke a padding hosszától függ. A valóságban a hossz miatt alapesetben nem hatékony ez a támadás, de van amikor a körülmények alapján jól alkalmazható lehet.
+
+
+5. Mi az a születésnapi paradoxon, és hogyan kapcsolódik a kriptográfiai hash-függvényekhez? Mi a születésnapi paradoxon következménye a hash-függvények kimenetének méretére nézve?
+	Azt jelenti, hogy ha van N különböző lehetőségünk és abból eggyesével véletlenszerűen választunk ki, úgy hogy a kiválasztott értéket mindig újratöltjük,
+	akkor gyök(N) választás után nagyon megnő annak a valószínűsége, hogy olyat választunk, amit az előzőekben már választottunk.
+	A hash függvények kapcsán ez azt jelenti, hogy ha a hash kimenetének lehetséges száma k, akkor a gyök(k)-adik különböző hashelés után nagyon megnő
+	annak a valószínűsége, hogy két különböző bemenethez azonos kimenet tartozik.
+
+
+6. Mi a legfontosabb különbség a MAC-függvények és a digitális aláírás sémák között? Milyen extra biztonsági funkciót/szolgáltatást nyújtanak a digitális aláírás sémák?
+	MAC nem biztosít a használó kilétéről, de az elektronikus aláírás igen.
+	A digitális aláírásokhoz tartozik egy tanusítvány, azok érvényességéről. Az elektronikus aláírás tartalmazhat több plusz információt,
+	például az aláíró neve, cége, aláírás időpontja. Az aláírás érvényességét igazoló tanusítvány visszavonható.
+
+
+7. Mi az a szemantikus biztonság? Hogyan érhető el? Szemantikailag biztonságos-e a tankönyvi RSA-séma? Ha igen, miért? Ha nem, hogyan lehet szemantikailag biztonságossá tenni?
+	Azt jelenti, hogy két különbőző üzenet kódolt változatairől nem lehet egyértelműen eldönteni, hogy melyik melyikhez tartozik.
+	Az RSA nem biztonságos, mivel determinisztikus. PKCS #1-segítségével biztonságossá tehető.
+
+
+8. Melyek a kulcscsere protokollok fő tervezési céljai? Mit feltételezünk a támadóról kulcscsere protokollok esetében?
+	Tervezési céljük, hogy a felek között az alábbi feltételek teljesülésével történyen meg a kulcscsere:
+		- a kulcs titokban marad, csak a résztvető felek ismerik
+		- mindkét fél úgy gondolja, hogy a protokol sikeresen lefutott
+		- mindkét félnek a legfrissebb kulcs áll rendelkezésére
+	Azt feltételezzük, hogy a támadó képes lehallgatni a protokollt és módosítani az üzeneteket. Célja általában, hogy másnak adja ki magát, más nevében küldjön üzenetet.
+
+
+
+9. Milyen módszereket ismer a kulcsfrissesség biztosítására kulcscsere protokollokban? Milyen előnyei és hátrányai vannak az egyes módszereknek?
+	- Időbélyeg alapú: Ennek lényege, hogy a kulcsokhoz tartozik egy időpont, ami meghatározza generálásuk idejét. 
+		Ez alapján ha mindkét fél ismeri a saját idejét és a kulcs generálási idejét, akkor meg lehet, mondani, hogy a legfrissebb-e.
+		Hátránya, hogy növekszik a csomag mérete és a felek között szükséges szinkronizálni az órákat.
+	- Véletlenszám alapú: A frissesség biztosításához generálnak egy véletlen számot, amit elküldenek titkosítva a kulccsal együtt.
+		Ezt a számot visszaküldi a másik fél a válaszában. Az eredeti küldő fél, ellenőrzi a szám értékét, hogy egyezik-e az eredetivel.
+		Előnye, hogy nincs szükség az órák szinkronizálására. Hátrány, hogy nő a csomagméret és kétszer is el kell küldeni a random számot.
+
+
+10. Milyen két általános elvet/mechanizmust alkalmazunk jelszó alapú kulcsszármaztatásnál (password-based key derivation) az off-line szótár támadások elleni védelem érdekében? Pontosan mit garantálnak ezek az elvek/mechanizmusok?
+	Salting és Stretching. 
+	Salting lényege, hogy egy salt érték segítségvel növeljük az egy jelszóból szármasztatható kulcsok számát.
+	Stretching lényeg, hogy növeli a próbálozáshoz szükséges időt, ezzel lelassítja a támadót.
+	Ezek az elvek/mechanizmusok növelik az időd amire a támadónak brute force esetén szüksége van.
+
+
+11. Adjon áttekintést a TLS v1.2 Handshake protokoll működéséről! Milyen üzenetek kerülnek átküldésre a következő két esetben: a) az ügyfél új munkamenetet (session) akar nyitni, b) az ügyfél új kapcsolatot (connection) akar nyitni egy meglévő és érvényes munkamenetben? 
+
+
+
+12.	Mi a lényege a TLS Record protokoll elleni BEAST támadásnak (ha blokkrejtjelezést használunk CBC módban)? Milyen orákulumra van szükség hozzá? A gyakorlatban hol fordulhat elő ilyen orákulum?
+
+
+
+13.	Milyen gyengeségei vannak a WEP (Wired Equivalent Privacy) protokollban használt titkosítási módszernek? 
+	A CRC függvény lineáris a XOR műveletre nézve.
+
+
+14.  Hogyan működik a hitelesítés és a Pairwise Master Key létrehozása a WPA-ban? Miből származnak a Pairwise Transient Key kulcsok, és mire használják őket?
+
+
+
+15. Mi az a nyilvános kulcsú tanúsítvány, és melyek az életciklusának fázisai? Milyen biztonsági követelményeknek kell megfelelniük a bizalmi szolgáltatóknak (Certificate Authority), és milyen biztonsági intézkedéseket alkalmaznak?
+	A nyilvánus kulcsú tanusítvány egy igazolás arró, hogy a tulajdonosána álltal végrehajtott művelet biztonságos és megbízható.
+	Az életciklusa részeként ki lehet állítani, érvényes lehet és vissza lehet vonni.
+	A szolgáltatónak kell, hogy legyen tanusítványa arról, hogy állíthat ki tanusítványt.
+	Biztonsági intézkedésként visszavonhatják azokat a már kiadott tanusítványokat, amik elvaulnak, vagy már nem ítélik hitelesnek.

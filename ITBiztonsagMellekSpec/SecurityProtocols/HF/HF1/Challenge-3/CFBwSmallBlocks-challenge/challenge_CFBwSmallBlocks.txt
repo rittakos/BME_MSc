@@ -1,0 +1,76 @@
+CFB with small blocks
+=====================
+
+We intercepted an encrpyted message:
+
+   
+   
+   
+   
+   
+   bf 8c d2 35 4b 73 a4 df 34 a5 7c df 78 a2 36 92 52 
+      ca c7 35 58 93 06 45 84 89 b0 2a 73 b6 44 96 04 
+      08 52 85 f5 bf fc ba b3 55 0a 40 58 b3 40 13 2a 
+      73 b2 2e 84 80 83 66 e8 b1 d8 3c 3a cc f5 bf fc 
+      ba b3 55 0a 4e 9a 26 c3 a9 12 2d 73 b2 7b ce 50 
+      0e 33 ad 56 27 cf df 7a 6d f6 52 9f db 5a 78 e6 
+      cb 79 84 8c ca d8 79 94 0b 5a 64 e9 53 93 52 c6 
+      95 c9 bd 35 42 64 e5 a8 27 96 03 2d 68 32 6e 6f 
+      6b 3f a0 a6 9f dd 26 8c cc b0 39 cd 9e 19 f4 1e 
+      ba f2 cb 7e a8 62 fd a4 96 42 64 cd 91 d1 2e 99 
+      c8 da 29 e8 a5 61 b5 39 d6 07 91 98 e6 cf d5 c9 
+      bd 24 09 57 2e da 29 fb 97 24 0b 58 90 0c e5 af 
+      b6 4a 14 9c 7d 31 8d 83 7a 6d fb 9a 30 be 12 68 
+      7e a2 34 a6 9f d0 72 f4 16 15 8d 89 aa b7 05 1d 
+      b4 5f 6d fd f9 a5 41 11 2b c5 2b 8b 59 6e 7b 99 
+      db 15 86 ee 55 04 5d 43 7e be 18 5c 60 96 1f d6 
+      15 9a 31 90 0c ed b2 51 3e a6 8c d3 2d 20 2b e1 
+      d8 31 97 24 29 e8 a5 78 f1 f5 8c da 6d fd b2 28 
+      41 43 7e f8 88 59 31 d9 07 c3 b6 44 8c d9 6e 4f 
+      b4 5e f6 6e 04 6b 25 d9 37 dd 26 ae 85 ee 42 21 
+      1a fd b8 0c e3 68 18 68 7d 2c 08 4a 0d b1 9b be 
+      12 68 28 12 40 36 da 3c 61 e0 f7 aa 
+
+
+We know the following:
+
+- the message was encrypted using a block cipher in CFB mode
+- the block length is 1 byte
+- the first byte (hex 53) of the encrypted message is a random IV
+- the plaintext is a filled order form, and the empty form is publicly known:
+
+   Please, fill the form below with your data. Make sure you enter data as it is written in your identity document, such as your passport or driving license. If your data is inaccurate, we cannot gurantee the delivery of your order. Thank you for your understanding.
+
+   Name: 
+   Address: 
+   City: 
+   Postal code: 
+
+- the form was filled in by someone, so the plaintext is actually the following (where ? denotes unknown characters):
+ 
+      50 6c 65 61 73 65 2c 20 66 69 6c 6c 20 74 68 65    Please, fill the
+      20 66 6f 72 6d 20 62 65 6c 6f 77 20 77 69 74 68     form below with
+      20 79 6f 75 72 20 64 61 74 61 2e 20 4d 61 6b 65     your data. Make
+      20 73 75 72 65 20 79 6f 75 20 65 6e 74 65 72 20     sure you enter 
+      64 61 74 61 20 61 73 20 69 74 20 69 73 20 77 72    data as it is wr
+      69 74 74 65 6e 20 69 6e 20 79 6f 75 72 20 69 64    itten in your id
+      65 6e 74 69 74 79 20 64 6f 63 75 6d 65 6e 74 2c    entity document,
+      20 73 75 63 68 20 61 73 20 79 6f 75 72 20 70 61     such as your pa
+      73 73 70 6f 72 74 20 6f 72 20 64 72 69 76 69 6e    ssport or drivin
+      67 20 6c 69 63 65 6e 73 65 2e 20 49 66 20 79 6f    g license. If yo
+      75 72 20 64 61 74 61 20 69 73 20 69 6e 61 63 63    ur data is inacc
+      75 72 61 74 65 2c 20 77 65 20 63 61 6e 6e 6f 74    urate, we cannot
+      20 67 75 72 61 6e 74 65 65 20 74 68 65 20 64 65     gurantee the de
+      6c 69 76 65 72 79 20 6f 66 20 79 6f 75 72 20 6f    livery of your o
+      72 64 65 72 2e 20 54 68 61 6e 6b 20 79 6f 75 20    rder. Thank you 
+      66 6f 72 20 79 6f 75 72 20 75 6e 64 65 72 73 74    for your underst
+      61 6e 64 69 6e 67 2e 0a 0a 4e 61 6d 65 3a 20 ??    anding.  Name: ?
+      ?? ?? ?? ?? ?? ?? ?? ?? ?? 0a 41 64 64 72 65 73    ????????? Addres
+      73 3a 20 ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??    s: ?????????????
+      ?? ?? ?? ?? 0a 43 69 74 79 3a 20 ?? ?? ?? ?? ??    ???? City: ?????
+      ?? ?? ?? ?? ?? ?? 0a 50 6f 73 74 61 6c 20 63 6f    ?????? Postal co
+      64 65 3a 20 ?? ?? 20 ?? ?? ?? ?? ??                de: ?? ?????
+
+
+Can you determine the missing personal data of the client who used this form?
+

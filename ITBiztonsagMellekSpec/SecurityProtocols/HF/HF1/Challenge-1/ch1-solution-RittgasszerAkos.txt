@@ -1,0 +1,31 @@
+Security Protocols
+Homework 1 / Challenge 1
+
+Name/Neptun: Rittgasszer Ákos/Z8WK8D
+
+===============================================
+Simple XOR cipher (4 points)
+-----------------------------------------------
+
+The discovered key: 
+S4ls4
+
+
+First paragraph of the decrypted message:
+Salsa20 and the closely related ChaCha are stream ciphers developed by Daniel J. Bernstein. Salsa20, the original cipher, was designed in 2005, then later submitted to the eSTREAM European Union cryptographic validation process by Bernstein. ChaCha is a modification of Salsa20 published in 2008. It uses a new round function that increases diffusion and increases performance on some architectures.[4]
+
+
+Last paragraph of the decrypted message:
+ChaCha20 is the exclusive algorithm used by the WireGuard VPN system, as of protocol version 1.[41]
+
+
+Steps of the solution (brief description that is just enough to reproduce your method):
+Lefuttattam a mintavételező és statiszka scriptet úgy, hogy a mintavételezés mértékét 2-ről egyesével növeltem. 
+5-ös eltolás esetén a statisztikából kapott diagramm szélessége megegyezik az angol szövegekre jellemzőkkel. Így a kulcs hossza 5.
+
+Vizsgáltam 5-ös mintavételezéssel és 0-4 eltolással. Minden eltolásnál vettem a legtöbbször előforduló karaktert és xor-oltam a space-szel (0x20).
+Az így kapott karakterek kiadták a kulcsot. 
+
+Pl.: 0 eltolás esetén a leggyakoribb karakter kódja a 0x73, ekkor 0x73 + 0x20 = 0x53, ami az ASCII tábla alapján a S karaktert jelenti.
+Vagyis a kulcs első karaktere S. Ugyanígy a többi eltolásnál.
+
