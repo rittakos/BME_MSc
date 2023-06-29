@@ -1,0 +1,10 @@
+﻿  DebugOpenGL.cpp
+  framebuffer.cpp
+  opengltimer.cpp
+  pointgrid.cpp
+  quad.cpp
+  shader.cpp
+  texture.cpp
+  Skeleton.cpp
+  Generating Code...
+  Skeleton.vcxproj -> C:\BME\2.felev\Labor\labor4\GPUProgLab\Labs\Skeleton\bin\Skeleton.exe

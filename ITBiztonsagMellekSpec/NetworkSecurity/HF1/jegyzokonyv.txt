@@ -1,0 +1,21 @@
+1. Házi feladat jegyzőkönyv
+
+Rittgasszer Ákos / Z8WK8D
+
+Kinyert flag: YouCanHandleNetworking-Z8WK8D-075fec
+
+A feladat megoldása python nyelven készült. Első lépésként csatlakoztam a megadott
+portokhoz, hogy el tudjam érni a szervert (knock függvény). Ezután tudtam kapcsolatot
+létesíteni a szerverrel a 8888 porton keresztül. 
+A szerver elkérte a neptun kódomat (sendNeptun függvény).
+A megadás után kaptam néhány egyenletet amiket meg kellett oldanom (calcEqs függvény).
+Ezután a neptun kódom és az utolsó egyenlet megoldását kellett konkatenálni,
+majd az eredmény sha1 hash-ét kellett elküldeni a szervernek. Ezután úgy kellett
+további szöveget konkatenálni a neptun kód és az utolsó egyenlet konkatenációjához,
+hogy az sha1 eredménye 0000 kezdetű legyen. Ezt próbálkozással oldottam meg, 
+úgy hogy folyamatosan növeltem a végére fűzendő számot (sha1 függvény).
+Ezután egy post kéréssel aminek paramétere a neptun kódom és a crysys mint jelszó volt
+bejelentkeztem a megadott oldalra. Innen két get kéréssel letöltöttem a cert és key 
+file-okat. Ezek segítségével azonosítottam magamat a kért oldalon. 
+Itt azt kaptam először vissza, hogy állítsam be a User-agent-et CrySyS-ra.
+Ha ezt beállítva jelentkeztem be, akkor válaszként visszakaptam a keresestt flag-et.

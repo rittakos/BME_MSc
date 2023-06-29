@@ -1,0 +1,17 @@
+﻿  DebugOpenGL.cpp
+c1xx : fatal  error C1083: Cannot open source file: '..\..\..\Common\src\DebugOpenGL.cpp': No such file or directory
+  framebuffer.cpp
+c1xx : fatal  error C1083: Cannot open source file: '..\..\..\Common\src\framebuffer.cpp': No such file or directory
+  opengltimer.cpp
+c1xx : fatal  error C1083: Cannot open source file: '..\..\..\Common\src\opengltimer.cpp': No such file or directory
+  pointgrid.cpp
+c1xx : fatal  error C1083: Cannot open source file: '..\..\..\Common\src\pointgrid.cpp': No such file or directory
+  quad.cpp
+c1xx : fatal  error C1083: Cannot open source file: '..\..\..\Common\src\quad.cpp': No such file or directory
+  shader.cpp
+c1xx : fatal  error C1083: Cannot open source file: '..\..\..\Common\src\shader.cpp': No such file or directory
+  texture.cpp
+c1xx : fatal  error C1083: Cannot open source file: '..\..\..\Common\src\texture.cpp': No such file or directory
+  Skeleton.cpp
+C:\BME\2.felev\Labor\labor5\Compute\Skeleton\Skeleton.cpp(4,10): fatal  error C1083: Cannot open include file: 'GL/glew.h': No such file or directory
+  Generating Code...

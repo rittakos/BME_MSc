@@ -1,0 +1,26 @@
+{
+	"build_systems":
+	[
+		{
+			"name": "Gradle",
+			"shell_cmd": "gradle build --warning-mode all",
+			"working_dir": "${project_path}",
+			"file_regex": "^[ew]: (.:[^:]*): \\((\\d+), (\\d+)\\): ([^\n]+)"
+		}
+	],
+	"folders":
+	[
+		{
+			"path": "client/src/main",
+			"name" : "client/src/main"
+		},
+		{
+			"path": "webglmath/src/main/kotlin",
+			"name": "webglmath"
+		}
+	],
+	"settings":
+	{
+		"tab_size": 2
+	}
+}
