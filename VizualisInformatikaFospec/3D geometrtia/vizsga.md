@@ -3,9 +3,9 @@
 ## Görbék és felületek
 
 ### Hogyan lehet pontokat kombinálni, mit jelent az affin invariancia, miért fontos ez (1b:3-7,27,28) S+K
-Lineáris kombináció: $ r = \sum^n_{i=1}\alpha_i p_i $
+Lineáris kombináció: $r = \sum^n_{i=1}\alpha_i p_i$
 
-Baricentrikus kombináció: ha $ \sum^n_{i=1}\alpha_i = 1 $
+Baricentrikus kombináció: ha$ \sum^n_{i=1}\alpha_i = 1$
 
 Konvex komnbináció: ha minden $\alpha_1$ nem negatív
 
