@@ -221,7 +221,7 @@ PLU: $Ax = b \Leftrightarrow PAx = Pb \Leftrightarrow LUx = Pb \Leftrightarrow L
 	
 ## bázisfelbontás kiszámítása
 	
-lád fentebb
+lásd fentebb
 
 $$ A = \begin{vmatrix} 
 1 & 2 & 3 & 4 & 5\\ 
