@@ -71,15 +71,37 @@ Két számhoz (paraméterek) rendel hozzá egy pontot. Konstans paraméter vonal
 
 Főgörbületek a minimális és maximális görbület, amik merőlegesek egymásra. Euler egyenlet: $\kappa(\phi) = \kappa_1\cos^2\phi+\kappa_2\sin^2\phi$.
 
-Gauss szorzat: $G = \frac{LN-M^2}{EF - F^2}$, ahol $L = r_{uu}n$, $M = r_{uv}n$, $N = r_{vv}n$. Az átlaggörbület $ \frac{NE - 2MF + LG}{2(EG - F^2)}$.
+Gauss szorzat: $G = \frac{LN-M^2}{EF - F^2}$, ahol $L = r_{uu}n$, $M = r_{uv}n$, $N = r_{vv}n$. Az átlaggörbület $\frac{NE - 2MF + LG}{2(EG - F^2)}$.
 
 Ha $G > 0$ akkor a felület eliptikus, ha $G < 0$ akkor a felület hiberbolikus és ha $G = 0, M \ne 0$ akkor a felület parabolikus.
 
 ### Weingarten-leképzés és a mátrixának tulajdonságai, felírása különböző bázisokban (1b:41,42), implicit felületek Weingarten-mátrixa (1b:44) [beágyazott nem kell], S+K
 
-A leképezés megkaphtó $I^{-1}II$, ahol $I =  \begin{matrix}E& F \\ F&   G\end{matrix}$ és $II = \begin{matrix}L& M \\ M& N\end{matrix}$
+A leképezés megkaphtó $I^{-1}II$, ahol
 
-Implicit esetben a mátrxi: $\begin{matrix}f_{xx}& f_{xy}& f_{xz} \\ f_{xy}& f_{yy}& f_{yz} \\ f_{xz}& f_{yz}& f_{zz}\end{matrix}$
+$$ I = 
+\left(\begin{array}{c} 
+E & F\\
+F & G
+\end{array}\right)
+$$
+
+$$ II = 
+\left(\begin{array}{c} 
+L & M\\
+M & N
+\end{array}\right)
+$$
+
+Implicit esetben a mátrix:
+
+$$
+\left(\begin{array}{c} 
+f_{xx}& f_{xy}& f_{xz}\\ 
+f_{xy} & f_{yy}& f_{yz}\\ 
+f_{xz}& f_{yz}& f_{zz}
+\end{array}\right)
+$$
 
 ## Háromszöghálók 
 
