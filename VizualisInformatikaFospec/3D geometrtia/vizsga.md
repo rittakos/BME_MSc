@@ -3,9 +3,10 @@
 ## Görbék és felületek
 
 ### Hogyan lehet pontokat kombinálni, mit jelent az affin invariancia, miért fontos ez (1b:3-7,27,28) S+K
-Lineáris kombináció: $r = \sum_{i=1}^{n}\alpha_i p_i$
 
-Baricentrikus kombináció: ha $\sum^n_{i=1}\alpha_i = 1$
+Lineáris kombináció: $r = \sum\limits_{i=1}^{n}\alpha_i p_i$
+
+Baricentrikus kombináció: ha $\sum\limits^n_{i=1}\alpha_i = 1$
 
 Konvex komnbináció: ha minden $\alpha_1$ nem negatív
 
@@ -124,14 +125,14 @@ A decimálás a háromszögháló egyszerűsítése. Klaszterekre bontjuk, amikb
 
 ### Milyen módszereket ismer normálvektor becslésére? (2b:20, 3c:5-6) S+R+K
 
-Normálvektpr becsléséhez használhatjuk a környező háromszögek normálvektorait: $n_p = \frac1n \sum_in_{i0}$. Ennél pontosabb becslést kapunk, ha a környező normálvektorokat a háromszögek területeivel súlyozzuk. Tovább pontosítva: $n = \sum_{i=1}^{n} n_i \cdot \frac{A_i}{||v_i||^2||v_{i+1}||^2}$
+Normálvektor becsléséhez használhatjuk a környező háromszögek normálvektorait: $n_p = \frac1n \sum\limits_in_{i0}$. Ennél pontosabb becslést kapunk, ha a környező normálvektorokat a háromszögek területeivel súlyozzuk. Tovább pontosítva: $n = \sum\limits_{i=1}^{n} n_i \cdot \frac{A_i}{||v_i||^2||v_{i+1}||^2}$
 
 
 ### Hogyan lehet végtelenül kis sugarú hengerek és gömbök bevezetésével háromszöghálón átlag és Gauss-görbületet definiálni? (2b:21) S+R+K
 
-A Gauss görbület: $G(p) = \frac{\delta(p)}{\frac13A(p)}$, ahol a $\delta(p) = 2\pi - \sum_i \alpha_i$ vagyis a szöghiány. 
+A Gauss görbület: $G(p) = \frac{\delta(p)}{\frac13A(p)}$, ahol a $\delta(p) = 2\pi - \sum\limits_i \alpha_i$ vagyis a szöghiány. 
 
-Az átlaggörbület: $H(p) = \frac{\frac14\sum_i\beta_i|e_i|}{\frac13A(p)}$, ahol $\beta_i$ az $i.$ és $i-1.$ háromszög által bezárt szög, $e_i$ pedig a közös élük.
+Az átlaggörbület: $H(p) = \frac{\frac14\sum\limits_i\beta_i|e_i|}{\frac13A(p)}$, ahol $\beta_i$ az $i.$ és $i-1.$ háromszög által bezárt szög, $e_i$ pedig a közös élük.
 
 ![](Img/I1.png)
 
@@ -148,7 +149,7 @@ Fél-él adatstruktúra: Irányított élpárokat tárolunk. Vannak topológikus
 
 ### Mi a Lagrange interpoláció lényege, milyen tulajdonságokkal rendelkeznek a súlyfüggvények; mi a Hermite interpoláció lényege, milyen tulajdonságokkal rendelkeznek a súlyfüggvények (5:3,4) S+K
 
-Lagrange: Adott n+1 pont és paraméter. A cél, hogy $r(t_k) = p_k$. A súlyfüggvények: $L_k(t)$ 0, ha $j=k$ és 1 ha $j\neq k$. $r(t) = \sum_{k = 0}^np_kL_k(t)$
+Lagrange: Adott n+1 pont és paraméter. A cél, hogy $r(t_k) = p_k$. A súlyfüggvények: $L_k(t)$ 0, ha $j=k$ és 1 ha $j\neq k$. $r(t) = \sum\limits_{k = 0}^np_kL_k(t)$
 
 Hermite: Adott $p_A$, $t_A$, $p_B$, $t_B$, $t \in [0,1]$. Cél $r(0) = p_A$, $r(1) = p_B$, $r'(0) = t_A$, $r'(1) = t_B$. Súlyfüggvények: $r(t) = p_AF_0(t) + t_AG_0(t) + p_BF_1(t) + t_BG_1(t)$.
 
@@ -162,7 +163,7 @@ n-ed fokú Bernstein polinom: $B_k^n(t) = {n \choose k}(1-t)^{n-k}t^k$. A pascal
 
 ### Írja fel a Bézier görbe egyenletét és ismertesse a legfontosabb tulajdonságait (5:9,10) S+K
 
-$r(t) = \sum_{k=0}^n c_kB_k^n(t)$
+$r(t) = \sum\limits_{k=0}^n c_kB_k^n(t)$
 
 ### U: hajtsa végre a de Casteljau algoritmust az adott kontrollpoligon alapján; U(de Casteljau) vagy (5:12,13)
 
@@ -174,7 +175,7 @@ $r(t) = \sum_{k=0}^n c_kB_k^n(t)$
 
 ### Hogyan lehet meghatározni a Bézier görbék deriváltjait (5:15); két szegmens összeillesztésénél mit jelent a parametrikus illetve a geometriai folytonosság (görbületképlet nem kell) (5:15-16) S+K+R
 
-$\dot r(t) = n\sum_{j=0}^{n-1}(c_{j+1} - c_j)B_j^{n-1}(t)$
+$\dot r(t) = n\sum\limits_{j=0}^{n-1}(c_{j+1} - c_j)B_j^{n-1}(t)$
 
 Parametrikus folytonosság, hogy a két görbe illeszkedésénél a deriváltjuk azonos.
 
@@ -182,7 +183,7 @@ Geometriai folytonosság, hogy az illeszkedésnél az érintők azomosak.
 
 ### Írja fel a Bézier felületek egyenletét (5:17), hogyan lehet kiszámolni a deriváltakat a határok mentén (5:18); mi a bilineáris interpoláció, szemléltesse a de Casteljau algoritmust felületekre (5:19) S+K+R
 
-$s(u,v) = \sum_{i=0}^n\sum_{j=0}^mc_{ij}B_i^n(u)B_j^m{v}$
+$s(u,v) = \sum\limits_{i=0}^n\sum\limits_{j=0}^mc_{ij}B_i^n(u)B_j^m{v}$
 
 ![](Img/I2.png)
 
@@ -192,7 +193,7 @@ $s(u,v) = \sum_{i=0}^n\sum_{j=0}^mc_{ij}B_i^n(u)B_j^m{v}$
 
 ### Írja fel a B-spline görbe egyenletét, és ismertesse a legfontosabb tulajdonságait (6:3,7) S+K+R
 
-$r(u) = \sum_{i=0}^{L-1}P_iN_i^n(u)$
+$r(u) = \sum\limits_{i=0}^{L-1}P_iN_i^n(u)$
 
 ### Foglalja össze a harmadfokú B-spline bázisfüggvények tulajdonságait; milyen folytonosság teljesül a B-spline szegmensei között; mit jelent a végponti interpoláció; hogyan keletkeznek zárt B-spline-ok (6:3-7) (a rekurzív formula nem kell) S+K+R
 
@@ -222,7 +223,7 @@ Tulajdonságok: Görbepont, permutáció invariáns, egyenletes két ponton át,
 
 ### Írja fel a B-spline felület egyenletét, és ismertesse a legfontosabb tulajdonságait (6:18) S+K
 
-$s(u,v) = \sum_{i=0}^{L_u-1}\sum_{j=0}^{L_v-1}P_{ij}N_i^n(u)N_j^m{v}$
+$s(u,v) = \sum\limits_{i=0}^{L_u-1}\sum\limits_{j=0}^{L_v-1}P_{ij}N_i^n(u)N_j^m{v}$
 
 ## Interpoláló és rekurzív felosztásos felületek
 
@@ -234,7 +235,7 @@ A $G^1$ Coons felületeknél adottak a keresztderiváltak is.
 
 ### Irja fel a ribbon alapú, n-oldalú felületek egyenletét; magyarázza el mi a ribbon, mi a domén, milyen célt szolgálnak a súlyfüggvények és mi az (u,v) → (si, hi) leképzés lényege (10:13-17); S+R+K
 
-Egy n oldalú felület ribbon-okból áll. Mindegyik ribbon egy 4 oldalú parametrikus felület. Az egyenlet: $S(u,v) = \sum_{i=0}^{n-1}R_i(s_i(u,v), t_i(u, v))Blend_{oldal}^i(u, v)$. A domén egy n oldalú konvex poligon.   
+Egy n oldalú felület ribbon-okból áll. Mindegyik ribbon egy 4 oldalú parametrikus felület. Az egyenlet: $S(u,v) = \sum\limits_{i=0}^{n-1}R_i(s_i(u,v), t_i(u, v))Blend_{oldal}^i(u, v)$. A domén egy n oldalú konvex poligon.   
 
 ### U: határozzon meg egy n-oldalú poligonális domént az adott határgörbék alapján U(domén) vagy (10:15)
 
@@ -328,7 +329,7 @@ Bemenet n adatpont, a kimenet egy B-spine görbe. Előnye a szakaszonkénti inte
 
 ### Ismertesse, hogy rögzített kontrollpont szám és paraméterezés esetén, hogyan kell egy B-spline görbét illeszteni egy adott ponthalmazra; mi az input és az output; hogyan számoljuk a távolságokat; mi a minimalizálandó mennyiség, amelyből kijönnek az egyenletek (16:5) (maga a mátrixegyenlet felírása és az egyenletrendszer képlete nem kell) S+K
 
-A bemenet M darav pont és t érték. Ezekből keresendő az n+1 kontrolpont ami meghatározza a B-spline-t. A távolság, amit minimalizálni kell: $d_i = |P_i - \sum_{j=0}^nc_jN_j(t_i)|$
+A bemenet M darav pont és t érték. Ezekből keresendő az n+1 kontrolpont ami meghatározza a B-spline-t. A távolság, amit minimalizálni kell: $d_i = |P_i - \sum\limits_{j=0}^nc_jN_j(t_i)|$
 
 ### Ismertesse a görbe approximációs feladat megoldásának iteratív lépéseit, mikor és hogyan bővítjük a kontrollpontok számát, hogyan értékeljük ki az illesztést és hogyan javítjuk a paraméterezést (16:4,6) S+K+R
 
