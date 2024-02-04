@@ -1,0 +1,2178 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 48b3050..166f84a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,13 +20,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ 
+ if(CMAKE_COMPILER_IS_GNUCXX)
+   set(CMAKE_CXX_FLAGS "-Wall -fPIC -Wno-reorder")
+-  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -DDEBUG -fsanitize=address")
++  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -DDEBUG")
+   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -DNDEBUG")
+ endif(CMAKE_COMPILER_IS_GNUCXX)
+ 
+ set(geo_HEADERS # headers processed by MOC
+   viewer.hh
+   window.hh
++  geometry.hh
++  dbs.hh
+   )
+ 
+ set(CMAKE_AUTORCC ON)
+@@ -60,6 +62,10 @@ add_executable(geo-framework WIN32
+   viewer.cc
+   visualization.cc
+   window.cc
++  bspline.cc
++  trimesh.cc
++  vector.cc
++  dbs.cc
+   )
+ 
+ if(WITH_JET_FITTING)
+diff --git a/bspline.cc b/bspline.cc
+new file mode 100644
+index 0000000..deafe64
+--- /dev/null
++++ b/bspline.cc
+@@ -0,0 +1,584 @@
++#include <algorithm>
++
++#include "geometry.hh"
++
++namespace Geometry {
++
++BSBasis::BSBasis() {
++}
++
++BSBasis::BSBasis(size_t degree, const DoubleVector &knots) : p_(degree), knots_(knots) {
++}
++
++size_t
++BSBasis::degree() const {
++  return p_;
++}
++
++void
++BSBasis::setDegree(size_t degree) {
++  p_ = degree;
++}
++
++const DoubleVector &
++BSBasis::knots() const {
++  return knots_;
++}
++
++DoubleVector &
++BSBasis::knots() {
++  return knots_;
++}
++
++double
++BSBasis::low() const {
++  return knots_[p_];
++}
++
++double
++BSBasis::high() const {
++  return knots_[knots_.size()-p_-1];
++}
++
++void
++BSBasis::reverse() {
++  size_t k = knots_.size();
++  DoubleVector new_knots;
++  new_knots.reserve(k);
++
++  double curr = knots_.front();
++  for (size_t i = 1, j = k - 1; i < k; ++i, --j) {
++    new_knots.push_back(curr);
++    curr += knots_[j] - knots_[j-1];
++  }
++  new_knots.push_back(curr);
++
++  knots_ = new_knots;
++}
++
++void
++BSBasis::normalize() {
++  size_t k = knots_.size();
++  double low = knots_.front(), high = knots_.back(), len = high - low;
++  for (size_t i = 0; i < k; ++i) {
++    knots_[i] = (knots_[i] - low) / len;
++  }
++}
++
++size_t
++BSBasis::findSpan(double u) const {
++  if(u >= knots_[knots_.size()-p_-1])
++    return knots_.size() - p_ - 2;
++  return (std::upper_bound(knots_.begin() + p_ + 1, knots_.end(), u) - knots_.begin()) - 1;
++}
++
++size_t
++BSBasis::findSpanWithMultiplicity(double u, size_t &multi) const
++{
++  auto range = std::equal_range(knots_.begin(), knots_.end(), u);
++  multi = range.second - range.first;
++
++  if (u >= knots_[knots_.size()-p_-1])
++    return knots_.size() - p_ - 2;
++  return (range.second - knots_.begin()) - 1;
++}
++
++
++void
++BSBasis::basisFunctions(size_t i, double u, DoubleVector &coeff) const {
++  coeff.clear(); coeff.reserve(p_ + 1);
++  coeff.push_back(1.0);
++  DoubleVector left(p_ + 1), right(p_ + 1);
++  for(size_t j = 1; j <= p_; ++j) {
++    left[j]  = u - knots_[i+1-j];
++    right[j] = knots_[i+j] - u;
++    double saved = 0.0;
++    for(size_t r = 0; r < j; ++r) {
++      double tmp = coeff[r] / (right[r+1] + left[j-r]);
++      coeff[r] = saved + tmp * right[r+1];
++      saved = tmp * left[j-r];
++    }
++    coeff.push_back(saved);
++  }
++}
++
++void
++BSBasis::basisFunctionsAll(size_t i, double u, DoubleMatrix &coeff) const {
++  coeff.clear(); coeff.resize(p_ + 1);
++  coeff[0].push_back(1.0);
++  DoubleVector left(p_ + 1), right(p_ + 1);
++  for(size_t j = 1; j <= p_; ++j) {
++    coeff[j].reserve(j + 1);
++    left[j]  = u - knots_[i+1-j];
++    right[j] = knots_[i+j] - u;
++    double saved = 0.0;
++    for(size_t r = 0; r < j; ++r) {
++      double tmp = coeff[j-1][r] / (right[r+1] + left[j-r]);
++      coeff[j].push_back(saved + tmp * right[r+1]);
++      saved = tmp * left[j-r];
++    }
++    coeff[j].push_back(saved);
++  }
++}
++
++void
++BSBasis::basisFunctionDerivatives(size_t i, double u, size_t nr_der, DoubleMatrix &coeff) const {
++  coeff.clear(); coeff.resize(nr_der + 1);
++  DoubleMatrix ndu(p_ + 1);
++  ndu[0].push_back(1);
++  DoubleVector left(p_ + 1), right(p_ + 1);
++  for (size_t j = 1; j <= p_; ++j) {
++    left[j] = u - knots_[i+1-j];
++    right[j] = knots_[i+j] - u;
++    double saved = 0;
++    for (size_t r = 0; r < j; ++r) {
++      ndu[j].push_back(right[r+1] + left[j-r]);
++      double tmp = ndu[r][j-1] / ndu[j][r];
++      ndu[r].push_back(saved + right[r+1] * tmp);
++      saved = tmp * left[j-r];
++    }
++    ndu[j].push_back(saved);
++  }
++  for (size_t j = 0; j <= p_; ++j)
++    coeff[0].push_back(ndu[j][p_]);
++  DoubleVector a[2]; a[0].resize(p_ + 1); a[1].resize(p_ + 1);
++  for (size_t r = 0; r <= p_; ++r) {
++    size_t s1 = 0, s2 = 1;
++    a[0][0] = 1;
++    for (size_t k = 1; k <= nr_der; ++k) {
++      double d = 0;
++      size_t pk = p_ - k;
++      if (r >= k) {
++        a[s2][0] = a[s1][0] / ndu[pk+1][r-k];
++        d = a[s2][0] * ndu[r-k][pk];
++      }
++      size_t j1 = r >= k - 1 ? 1 : k - r;
++      size_t j2 = r <= pk + 1 ? k - 1 : p_ - r;
++      for (size_t j = j1; j <= j2; ++j) {
++        a[s2][j] = (a[s1][j] - a[s1][j-1]) / ndu[pk+1][r+j-k];
++        d += a[s2][j] * ndu[r+j-k][pk];
++      }
++      if (r <= pk) {
++        a[s2][k] = -a[s1][k-1] / ndu[pk+1][r];
++        d += a[s2][k] * ndu[r][pk];
++      }
++      coeff[k].push_back(d);
++      std::swap(s1, s2);
++    }
++  }
++  size_t r = p_;
++  for (size_t k = 1; k <= nr_der; ++k) {
++    for (size_t j = 0; j <= p_; ++j)
++      coeff[k][j] *= r;
++    r *= p_ - k;
++  }
++}
++
++BSCurve::BSCurve() {
++}
++
++BSCurve::BSCurve(const PointVector &cpts) : n_(cpts.size() - 1), cp_(cpts) {
++  size_t order = cpts.size();
++  DoubleVector knots;
++  basis_.setDegree(order - 1);
++  basis_.knots().reserve(2 * order);
++  basis_.knots().insert(basis_.knots().end(), order, 0.0);
++  basis_.knots().insert(basis_.knots().end(), order, 1.0);
++}
++
++BSCurve::BSCurve(size_t degree, const DoubleVector &knots, const PointVector &cpts)
++  : n_(cpts.size() - 1), cp_(cpts)
++{
++  basis_.setDegree(degree);
++  basis_.knots() = knots;
++}
++
++Point3D
++BSCurve::eval(double u) const {
++  size_t p = basis_.degree();
++  size_t span = basis_.findSpan(u);
++  DoubleVector coeff; basis_.basisFunctions(span, u, coeff);
++  Point3D point(0.0, 0.0, 0.0);
++  for(size_t i = 0; i <= p; ++i)
++    point += cp_[span - p + i] * coeff[i];
++  return point;
++}
++
++Point3D
++BSCurve::eval(double u, size_t nr_der, VectorVector &der) const {
++  size_t p = basis_.degree();
++  size_t du = std::min(nr_der, p);
++  der.clear();
++  size_t span = basis_.findSpan(u);
++  std::vector<DoubleVector> coeff; basis_.basisFunctionDerivatives(span, u, du, coeff);
++  for(size_t k = 0; k <= du; ++k) {
++    der.emplace_back(0.0, 0.0, 0.0);
++    for(size_t j = 0; j <= p; ++j)
++      der[k] += cp_[span-p+j] * coeff[k][j];
++  }
++  for(size_t k = p + 1; k <= nr_der; ++k)
++    der.emplace_back(0.0, 0.0, 0.0);
++  return der[0];
++}
++
++const PointVector &
++BSCurve::controlPoints() const {
++  return cp_;
++}
++
++PointVector &
++BSCurve::controlPoints() {
++  return cp_;
++}
++
++const BSBasis &
++BSCurve::basis() const {
++  return basis_;
++}
++
++void
++BSCurve::reverse() {
++  basis_.reverse();
++  std::reverse(cp_.begin(), cp_.end());
++}
++
++void
++BSCurve::normalize() {
++  basis_.normalize();
++}
++
++double
++BSCurve::arcLength(double from, double to) const {
++  size_t p = basis_.degree();
++  const auto &knots = basis_.knots();
++  if (to > knots[knots.size() - p - 1])
++    to = knots[knots.size() - p - 1];
++  if (from >= to)
++    return 0.0;
++  double next = std::min(to, knots[basis_.findSpan(from) + 1]);
++
++  // Estimate each knot interval using Gaussian quadratures
++  const static double gauss[] = {-0.861136312, 0.347854845,
++                                 -0.339981044, 0.652145155,
++                                 0.339981044, 0.652145155,
++                                 0.861136312, 0.347854845};
++
++  double sum = 0.0;
++  for (size_t i = 0; i < 8; i += 2) {
++    VectorVector der;
++    double u = ((next - from) * gauss[i] + from + next) * 0.5;
++    eval(u, 1, der);
++    sum += der[1].norm() * gauss[i+1] * (next - from) * 0.5;
++  }
++
++  return sum + arcLength(next, to);
++}
++
++BSCurve
++BSCurve::insertKnot(double u, size_t k, size_t s, size_t r) const {
++  size_t p = basis_.degree();
++  const auto &knots = basis_.knots();
++
++  BSCurve result;
++  result.basis_.setDegree(p); result.n_ = n_ + r;
++
++  result.basis_.knots().reserve(knots.size() + r);
++  std::copy_n(knots.begin(), k + 1, std::back_inserter(result.basis_.knots()));
++  std::fill_n(std::back_inserter(result.basis_.knots()), r, u);
++  std::copy(knots.begin() + k + 1, knots.end(), std::back_inserter(result.basis_.knots()));
++
++  result.cp_.resize(cp_.size() + r);
++  std::copy_n(cp_.begin(), k - p + 1, result.cp_.begin());
++  std::copy(cp_.begin() + k - s, cp_.end(), result.cp_.begin() + r + k - s);
++
++  PointVector tmp; tmp.reserve(p - s + 1);
++
++  std::copy_n(cp_.begin() + k - p, p - s + 1, std::back_inserter(tmp));
++
++  size_t L = k - p + 1;
++  for (size_t j = 1; j <= r; ++j, ++L) {
++    for (size_t i = 0; i <= p - j - s; ++i) {
++      double alpha = (u - knots[L+i]) / (knots[i+k+1] - knots[L+i]);
++      tmp[i] = tmp[i+1] * alpha + tmp[i] * (1.0 - alpha);
++    }
++    result.cp_[L] = tmp[0];
++    result.cp_[k+r-j-s] = tmp[p-j-s];
++  }
++  if (p > s + r + 1)
++    std::copy_n(tmp.begin() + 1, p - s - 1 - r, result.cp_.begin() + L);
++
++  return result;
++}
++
++BSCurve
++BSCurve::insertKnot(double u, size_t r) const {
++  size_t s;
++  size_t k = basis_.findSpanWithMultiplicity(u, s);
++  if (s >= basis_.degree())
++    return *this;
++  r = std::min(r, basis_.degree() - s);
++  return insertKnot(u, k, s, r);
++}
++
++DoubleVector
++BSCurve::intersectWithPlane(const Point3D &p, const Vector3D &n) const {
++  DoubleVector result;
++  BSCurve c = *this;
++  for (size_t k = 1; k <= c.n_; ++k) {
++    size_t deg = c.basis().degree();
++    const auto &knots = c.basis().knots();
++    double d1 = (c.cp_[k-1] - p) * n;
++    double d2 = (c.cp_[k]   - p) * n;
++    if (d1 * d2 <= 0.0) {
++      if (d1 * d2 == 0.0 && d1 + d2 != 0.0 &&
++          ((k == 1    && d1 == 0.0) ||
++           (k == c.n_ && d2 == 0.0) ||
++           (k < c.n_  && (c.cp_[k+1] - p) * n == 0)))
++        continue;
++      double k1 = knots[k], k2 = knots[k+deg];
++      double g1 = k1, g2 = k2;
++      for (size_t l = k + 1, le = k + deg; l != le; ++l) {
++        g1 += knots[l];
++        g2 += knots[l];
++      }
++      g1 /= deg; g2 /= deg;
++      double ratio = d1 == 0.0 && d2 == 0.0
++        ? (g1 == k1 ? 0.0 : (g2 == k2 ? 1.0 : 0.5))
++        : std::abs(d1 / (d1 - d2));
++      double new_knot = g1 * (1.0 - ratio) + g2 * ratio;
++      if (std::abs((c.eval(new_knot) - p) * n) < epsilon) {
++        result.push_back(new_knot);
++        for (; k <= c.n_; ++k) {
++          double dd = (c.cp_[k] - p) * n;
++          if (dd != 0.0)
++            break;
++        }
++      } else {
++        size_t old_size = c.n_;
++        c = c.insertKnot(new_knot, deg - 1);
++        if (c.n_ != old_size)
++          --k;
++      }
++    }
++  }
++  return result;
++}
++
++BSSurface::BSSurface() {
++}
++
++BSSurface::BSSurface(size_t deg_u, size_t deg_v, const PointVector &cpts)
++  : n_u_(deg_u), n_v_(deg_v), cp_(cpts)
++{
++  basis_u_.setDegree(deg_u);
++  basis_v_.setDegree(deg_v);
++  basis_u_.knots().reserve(2 * (deg_u + 1));
++  basis_u_.knots().insert(basis_u_.knots().end(), deg_u + 1, 0.0);
++  basis_u_.knots().insert(basis_u_.knots().end(), deg_u + 1, 1.0);
++  basis_v_.knots().reserve(2 * (deg_v + 1));
++  basis_v_.knots().insert(basis_v_.knots().end(), deg_v + 1, 0.0);
++  basis_v_.knots().insert(basis_v_.knots().end(), deg_v + 1, 1.0);
++}
++
++BSSurface::BSSurface(size_t deg_u, size_t deg_v,
++                     const DoubleVector &knots_u, const DoubleVector &knots_v,
++                     const PointVector &cpts)
++  : n_u_(knots_u.size() - deg_u - 2), n_v_(knots_v.size() - deg_v - 2), cp_(cpts)
++{
++  basis_u_.setDegree(deg_u);
++  basis_v_.setDegree(deg_v);
++  basis_u_.knots() = knots_u;
++  basis_v_.knots() = knots_v;
++}
++
++Point3D
++BSSurface::eval(double u, double v) const {
++  size_t p_u = basis_u_.degree(), p_v = basis_v_.degree();
++  size_t span_u = basis_u_.findSpan(u), span_v = basis_v_.findSpan(v);
++  DoubleVector coeff_u, coeff_v;
++  basis_u_.basisFunctions(span_u, u, coeff_u);
++  basis_v_.basisFunctions(span_v, v, coeff_v);
++  Point3D point(0.0, 0.0, 0.0);
++  for (size_t i = 0; i <= p_u; ++i) {
++    size_t base = (span_u - p_u + i) * (n_v_ + 1);
++    for (size_t j = 0; j <= p_v; ++j)
++      point += cp_[base+span_v-p_v+j] * coeff_u[i] * coeff_v[j];
++  }
++  return point;
++}
++
++Point3D
++BSSurface::eval(double u, double v, size_t nr_der, VectorMatrix &der) const {
++  der.clear(); der.resize(nr_der + 1);
++  size_t p_u = basis_u_.degree(), p_v = basis_v_.degree();
++  size_t du = std::min(nr_der, p_u), dv = std::min(nr_der, p_v);
++  size_t span_u = basis_u_.findSpan(u), span_v = basis_v_.findSpan(v);
++  DoubleMatrix coeff_u, coeff_v;
++  basis_u_.basisFunctionDerivatives(span_u, u, du, coeff_u);
++  basis_v_.basisFunctionDerivatives(span_v, v, dv, coeff_v);
++  VectorVector tmp(p_v + 1);
++  for (size_t k = 0; k <= du; ++k) {
++    for (size_t s = 0; s <= p_v; ++s) {
++      tmp[s] = Vector3D(0.0, 0.0, 0.0);
++      for (size_t r = 0; r <= p_u; ++r)
++        tmp[s] += cp_[(span_u-p_u+r)*(n_v_+1)+span_v-p_v+s] * coeff_u[k][r];
++    }
++    size_t dd = std::min(nr_der - k, dv);
++    for (size_t l = 0; l <= dd; ++l) {
++      Vector3D point(0.0, 0.0, 0.0);
++      for (size_t s = 0; s <= p_v; ++s)
++        point += tmp[s] * coeff_v[l][s];
++      der[k].push_back(point);
++    }
++  }
++  for (size_t k = p_u + 1; k <= nr_der; ++k)
++    for (size_t l = 0; l <= nr_der - k; ++l)
++      der[k].emplace_back(0.0, 0.0, 0.0);
++  for (size_t l = p_v + 1; l <= nr_der; ++l)
++    for (size_t k = 0; k <= nr_der - l; ++k)
++      der[k].emplace_back(0.0, 0.0, 0.0);
++  return der[0][0];
++}
++
++const PointVector &
++BSSurface::controlPoints() const {
++  return cp_;
++}
++
++std::array<size_t, 2>
++BSSurface::numControlPoints() const {
++  return { n_u_ + 1, n_v_ + 1 };
++}
++
++Point3D
++BSSurface::controlPoint(size_t i, size_t j) const {
++  return cp_[i*(n_v_+1)+j];
++}
++
++Point3D &
++BSSurface::controlPoint(size_t i, size_t j) {
++  return cp_[i*(n_v_+1)+j];
++}
++
++PointVector &
++BSSurface::controlPoints() {
++  return cp_;
++}
++
++const BSBasis &
++BSSurface::basisU() const {
++  return basis_u_;
++}
++
++const BSBasis &
++BSSurface::basisV() const {
++  return basis_v_;
++}
++
++void
++BSSurface::swapUV() {
++  std::swap(n_u_, n_v_);
++  std::swap(basis_u_, basis_v_);
++  auto cp_old = cp_;
++  for (size_t i = 0, index = 0; i <= n_u_; ++i)
++    for (size_t j = 0; j <= n_v_; ++j, ++index)
++      cp_[index] = cp_old[j*(n_u_+1)+i];
++}
++
++void
++BSSurface::reverseU() {
++  basis_u_.reverse();
++  for (size_t i = 0; i < (n_u_ + 1) / 2; ++i) {
++    size_t i2 = n_u_ - i;
++    for (size_t j = 0; j <= n_v_; ++j)
++      std::swap(cp_[i*(n_v_+1)+j], cp_[i2*(n_v_+1)+j]);
++  }
++}
++
++void BSSurface::reverseV() {
++  basis_v_.reverse();
++  for (size_t i = 0; i <= n_u_; ++i) {
++    size_t base = i * (n_v_ + 1);
++    for (size_t j = 0; j < (n_v_ + 1) / 2; ++j)
++      std::swap(cp_[base+j], cp_[base+n_v_-j]);
++  }
++}
++
++void BSSurface::normalize() {
++  basis_u_.normalize();
++  basis_v_.normalize();
++}
++
++BSSurface
++BSSurface::insertKnotU(double u, size_t k, size_t s, size_t r) const {
++  size_t p = basis_u_.degree();
++  const auto &knots = basis_u_.knots();
++
++  BSSurface result;
++  result.basis_v_ = basis_v_;
++  result.n_v_ = n_v_;
++
++  result.basis_u_.setDegree(p); result.n_u_ = n_u_ + r;
++
++  result.basis_u_.knots().reserve(knots.size() + r);
++  std::copy_n(knots.begin(), k + 1, std::back_inserter(result.basis_u_.knots()));
++  std::fill_n(std::back_inserter(result.basis_u_.knots()), r, u);
++  std::copy(knots.begin() + k + 1, knots.end(), std::back_inserter(result.basis_u_.knots()));
++
++  size_t ncol = n_v_ + 1;
++  result.cp_.resize((n_u_ + r + 1) * ncol);
++  std::copy_n(cp_.begin(), (k - p + 1) * ncol, result.cp_.begin());
++  std::copy(cp_.begin() + (k - s) * ncol, cp_.end(), result.cp_.begin() + (r + k - s) * ncol);
++
++  PointVector tmp; tmp.reserve((p - s + 1) * ncol);
++
++  std::copy_n(cp_.begin() + (k - p) * ncol, (p - s + 1) * ncol, std::back_inserter(tmp));
++
++  size_t L = k - p + 1;
++  for (size_t j = 1; j <= r; ++j, ++L) {
++    for (size_t i = 0; i <= p - j - s; ++i) {
++      double alpha = (u - knots[L+i]) / (knots[i+k+1] - knots[L+i]);
++      for (size_t l = 0; l < ncol; ++l)
++        tmp[i*ncol+l] = tmp[(i+1)*ncol+l] * alpha + tmp[i*ncol+l] * (1.0 - alpha);
++    }
++    for (size_t l = 0; l < ncol; ++l) {
++      result.cp_[L*ncol+l] = tmp[l];
++      result.cp_[(k+r-j-s)*ncol+l] = tmp[(p-j-s)*ncol+l];
++    }
++  }
++  if (p > s + r + 1)
++    std::copy_n(tmp.begin() + ncol, (p - s - 1 - r) * ncol, result.cp_.begin() + L * ncol);
++
++  return result;
++}
++
++BSSurface
++BSSurface::insertKnotV(double v, size_t k, size_t s, size_t r) const {
++  auto copy = *this;
++  copy.swapUV();
++  auto result = copy.insertKnotU(v, k, s, r);
++  result.swapUV();
++  return result;
++}
++
++BSSurface
++BSSurface::insertKnotU(double u, size_t r) const {
++  size_t s;
++  size_t k = basis_u_.findSpanWithMultiplicity(u, s);
++  if (s >= basis_u_.degree())
++    return *this;
++  r = std::min(r, basis_u_.degree() - s);
++  return insertKnotU(u, k, s, r);
++}
++
++BSSurface
++BSSurface::insertKnotV(double v, size_t r) const {
++  size_t s;
++  size_t k = basis_v_.findSpanWithMultiplicity(v, s);
++  if (s >= basis_v_.degree())
++    return *this;
++  r = std::min(r, basis_v_.degree() - s);
++  return insertKnotV(v, k, s, r);
++}
++
++} // namespace Geometry
+diff --git a/dbs.cc b/dbs.cc
+new file mode 100644
+index 0000000..c6fcf30
+--- /dev/null
++++ b/dbs.cc
+@@ -0,0 +1,461 @@
++#include "dbs.hh"
++#include "geometry.hh"
++
++#include <fstream>
++
++
++double DBS::fullness = 0.5;
++
++DBS::DBS(std::string filename) : Object(filename)
++{
++  reload();
++}
++
++void DBS::draw(const Visualization &vis) const {
++  if(vis.fullness != DBS::fullness)
++  {
++      DBS::fullness = vis.fullness;
++      const_cast<DBS*>(this)->updateBaseMesh();
++  }
++
++  Object::draw(vis);
++  if (vis.show_control_points) {
++      glDisable(GL_LIGHTING);
++      glLineWidth(3.0);
++      glColor3d(0.3, 0.3, 1.0);
++
++      for(size_t i = 0; i < num[0] - 1; ++i) // u
++      {
++          for(size_t j = 0; j < num[1] - 1; ++j) // v
++          {
++              glBegin(GL_LINE_LOOP);
++              const auto &p1 = control_points_matrix[i][j];
++              glVertex3dv(p1.data());
++              const auto &p2 = control_points_matrix[i + 1][j];
++              glVertex3dv(p2.data());
++              const auto &p3 = control_points_matrix[i + 1][j + 1];
++              glVertex3dv(p3.data());
++              const auto &p4 = control_points_matrix[i][j + 1];
++              glVertex3dv(p4.data());
++              glEnd();
++          }
++      }
++
++      glLineWidth(1.0);
++      glPointSize(8.0);
++      glColor3d(1.0, 0.0, 1.0);
++      glBegin(GL_POINTS);
++  
++      for(size_t idx = 0; idx < control_points.size(); ++idx)
++      {
++          if(innerPoint.at(idx))
++              continue;
++
++          const auto &p = control_points[idx];
++          glVertex3dv(p.data());
++      }
++      glEnd();
++      glPointSize(1.0);
++      glEnable(GL_LIGHTING);
++  }
++}
++
++void DBS::drawWithNames(const Visualization &vis) const {
++  if (!vis.show_control_points)
++      return;
++  for (size_t i = 0; i < control_points.size(); ++i) {
++      const auto &p = control_points[i];
++      glPushName(i);
++      glRasterPos3dv(p.data());
++      glPopName();
++  }
++}
++
++Vector DBS::postSelection(int selected) {
++  return control_points[selected];
++}
++
++void DBS::movement(int selected, const Vector &pos) {
++  if(innerPoint[selected])
++      return;
++  size_t i = selected % num[0];
++  size_t j = selected / num[0];
++  control_points_matrix[i][j] = pos;
++  updateBaseMesh();
++}
++
++
++void DBS::updateBaseMesh() {
++  size_t resolution = 50;
++
++  calcControlPoints();
++
++  mesh.clear();
++  std::vector<BaseMesh::VertexHandle> handles, tri;
++  size_t d_0 = degree[0], d_1 = degree[1];
++
++  Geometry::BSSurface bSSurface (d_0, d_1, knots_u, knots_v, DBS::toPoint3DVec(control_points));
++
++  std::vector<double> coeff_u, coeff_v;
++  for (size_t i = 0; i < resolution; ++i)
++  {
++      double u = (double)i / (double)(resolution - 1);
++      for (size_t j = 0; j < resolution; ++j) {
++          double v = (double)j / (double)(resolution - 1);
++          Vector p = DBS::toVec3D(bSSurface.eval(u, v));
++          handles.push_back(mesh.add_vertex(p));
++      }
++  }
++  for (size_t i = 0; i < resolution - 1; ++i)
++  {
++      for (size_t j = 0; j < resolution - 1; ++j) {
++          tri.clear();
++          tri.push_back(handles[i * resolution + j]);
++          tri.push_back(handles[i * resolution + j + 1]);
++          tri.push_back(handles[(i + 1) * resolution + j]);
++          mesh.add_face(tri);
++          tri.clear();
++          tri.push_back(handles[(i + 1) * resolution + j]);
++          tri.push_back(handles[i * resolution + j + 1]);
++          tri.push_back(handles[(i + 1) * resolution + j + 1]);
++          mesh.add_face(tri);
++        }
++  }
++
++  Object::updateBaseMesh(false, false);
++}
++
++bool DBS::reload() {
++  size_t nu, nv;
++  size_t du, dv;
++  try {
++      std::ifstream f(filename);
++      f.exceptions(std::ios::failbit | std::ios::badbit);
++      f >> du >> dv;
++      f >> nu >> nv;
++      degree[0] = du; degree[1] = dv;
++      num[0] = nu; num[1] = nv;
++
++      knots_u.resize(nu + du);
++      for(size_t idx = 0; idx <= du + nu; ++idx)
++          f >> knots_u[idx];
++
++      knots_v.resize(nv + dv);
++      for(size_t idx = 0; idx <= dv + nv; ++idx)
++          f >> knots_v[idx];
++
++      control_points_matrix.resize(nu);
++      for (size_t i = 0; i < nu; ++i)
++      {
++          control_points_matrix[i].resize(nv);
++      }
++
++      for (size_t u = 0; u < nu; ++u)
++        f >> control_points_matrix[u][0][0] >> control_points_matrix[u][0][1] >> control_points_matrix[u][0][2];
++
++      for (size_t v = 1; v < nv; ++v)
++        f >> control_points_matrix[nu - 1][v][0] >> control_points_matrix[nu - 1][v][1] >> control_points_matrix[nu - 1][v][2];
++
++      for (int u = nu - 2; u >= 0; --u)
++        f >> control_points_matrix[u][nv - 1][0] >> control_points_matrix[u][nv - 1][1] >> control_points_matrix[u][nv - 1][2];
++
++      for (size_t v = nv - 2; v >= 1; --v)
++        f >> control_points_matrix[0][v][0] >> control_points_matrix[0][v][1] >> control_points_matrix[0][v][2];
++
++  } catch(std::ifstream::failure &) {
++      return false;
++  }
++  updateBaseMesh();
++  return true;
++}
++
++
++DBS::~DBS()
++{
++  knots_u.resize(0);
++  knots_v.resize(0);
++}
++
++void DBS::calcControlPoints()
++{
++  // step 1.
++  for(size_t i = 1; i < num[0] - 1; ++i) // u
++  {
++      for(size_t j = 1; j < num[1] - 1; ++j) // v
++      {
++        double gamma_i_u = 0.0;
++        double gamma_j_v = 0.0;
++
++        for(int k = 1; k <= degree[0]; ++k)
++        {
++              gamma_i_u += knots_u[i + k];
++        }
++
++        for(int k = 1; k <= degree[1]; ++k)
++        {
++              gamma_j_v += knots_v[j + k];
++        }
++
++
++        gamma_i_u /= degree[0];
++        gamma_j_v /= degree[1];
++
++        Vector p = 0.5 * ((
++                       (1.0 - gamma_i_u) * control_points_matrix[0][j]) +
++                       ((gamma_i_u) * control_points_matrix[num[0] - 1][j]) +
++                       ((1.0 - gamma_j_v) * control_points_matrix[i][0]) +
++                       ((gamma_j_v) * control_points_matrix[i][num[1] - 1]));
++
++
++        control_points_matrix[i][j] = p;
++      }
++  }
++
++  //step 2.
++
++  const size_t maxIter = 100;
++  size_t iter = 0;
++
++  const double minDelta = 0.0001;
++  bool done = false;
++
++  std::vector<std::vector<Vector>> p = control_points_matrix;
++
++  while(!done && iter < maxIter)
++  {
++      for(size_t i = 1; i < num[0] - 1; ++i) // u
++      {
++        for(size_t j = 1; j < num[1] - 1; ++j) // v
++        {
++              double gamma_i_u = 0.0;
++              double gamma_j_v = 0.0;
++              double gamma_im1_u = 0.0;
++              double gamma_jm1_v = 0.0;
++              double gamma_ip1_u = 0.0;
++              double gamma_jp1_v = 0.0;
++
++              for(int k = 1; k <= degree[0]; ++k)
++              {
++                  gamma_i_u += knots_u[i + k];
++              }
++
++              for(int k = 1; k <= degree[1]; ++k)
++              {
++                  gamma_j_v += knots_v[j + k];
++              }
++
++              for(int k = 1; k <= degree[0]; ++k)
++              {
++                  gamma_im1_u += knots_u[i - 1 + k];
++              }
++
++              for(int k = 1; k <= degree[1]; ++k)
++              {
++                  gamma_jm1_v += knots_v[j - 1 + k];
++              }
++
++              for(int k = 1; k <= degree[0]; ++k)
++              {
++                  gamma_ip1_u += knots_u[i + 1 + k];
++              }
++
++              for(int k = 1; k <= degree[1]; ++k)
++              {
++                  gamma_jp1_v += knots_v[j + 1 + k];
++              }
++
++
++            double delta_minus_u    = (gamma_i_u - gamma_im1_u) / (gamma_ip1_u - gamma_im1_u);
++            double delta_plus_u     = (gamma_ip1_u - gamma_i_u) / (gamma_ip1_u - gamma_im1_u);
++            double delta_minus_v    = (gamma_j_v - gamma_jm1_v) / (gamma_jp1_v - gamma_jm1_v);
++            double delta_plus_v     = (gamma_jp1_v - gamma_j_v) / (gamma_jp1_v - gamma_jm1_v);
++
++
++            Vector P_1 =    delta_plus_u * p[i - 1][j] +
++                            delta_minus_u * p[i + 1][j] +
++                            delta_plus_v * p[i][j - 1] +
++                            delta_minus_v * p[i][j + 1];
++
++            Vector P_2 =    delta_plus_u * delta_plus_v * p[i - 1][j - 1] +
++                            delta_plus_u * delta_minus_v * p[i - 1][j + 1] +
++                            delta_minus_u * delta_plus_v * p[i + 1][j - 1] +
++                            delta_minus_u * delta_minus_v * p[i + 1][j + 1];
++
++
++            Vector P = fullness * P_1 + (1.0 - 2.0 * fullness) * P_2;
++
++            control_points_matrix[i][j] = P;
++
++            if(delta_minus_u < minDelta && delta_plus_u < minDelta && delta_plus_v < minDelta && delta_minus_v < minDelta)
++                  done = true;
++            else
++                  done = false;
++
++        }
++      }
++      p = control_points_matrix;
++      ++iter;
++  }
++
++
++  control_points.clear();
++  innerPoint.clear();
++  int idx = 0;
++  for(size_t j = 0; j < num[1]; ++j)
++  {
++      for(size_t i = 0; i < num[0]; ++i)
++      {
++        control_points.push_back(control_points_matrix[i][j]);
++        if(i != 0 && i != num[0] - 1 && j != 0 && j != num[1] - 1)
++              innerPoint[idx] = true;
++        else
++              innerPoint[idx] = false;
++        ++idx;
++      }
++  }
++}
++
++std::vector<Geometry::Point3D> DBS::toPoint3DVec(const std::vector<Vector> &in)
++{
++  std::vector<Geometry::Point3D> result;
++  for(const Vector& v : in)
++      result.push_back(DBS::toPoint3D(v));
++  return result;
++}
++
++std::vector<Vector> DBS::toVec3DVec (const std::vector<Geometry::Point3D>& in)
++{
++  std::vector<Vector> result;
++  for(const Geometry::Point3D& p : in)
++      result.push_back(DBS::toVec3D(p));
++  return result;
++}
++
++Geometry::Point3D DBS::toPoint3D (const Vector& in)
++{
++  Geometry::Point3D result(in[0], in[1], in[2]);
++  return result;
++}
++
++Vector DBS::toVec3D (const Geometry::Point3D& in)
++{
++  Vector result(in[0], in[1], in[2]);
++  return result;
++}
+diff --git a/dbs.hh b/dbs.hh
+new file mode 100644
+index 0000000..c7b1130
+--- /dev/null
++++ b/dbs.hh
+@@ -0,0 +1,55 @@
++#ifndef DBS_H
++#define DBS_H
++
++
++#include "geometry.hh"
++#include "object.hh"
++
++
++// A programot nem debuggolva futtatva sajnos idonkent elszall, mivel debuggolva nem tortent ilyen ezert nem tudtam kideriteni az okat.
++// A henger tesztfile benyitasanal problemakba utkoztem, a megadott fokszammal es csomovektorokkal nem jelenitett meg semmit,
++// a hiba a spline felulet szamolasanal van, de nem talaltam ra megoldast.
++// A fullness allitas nagy (0.7 es tobb) erteknel nem az elvart valtozast eredmenyezi, a belso kontrollpontok szamolasaban
++// tobbszori ellenorzesre sem talaltam meg a hibat, ugyhogy sajnos nem talaltam meg ennek az okat.
++
++
++class DBS : public Object
++{
++public:
++    DBS(std::string filename);
++
++    virtual void draw(const Visualization &vis) const override;
++    virtual void drawWithNames(const Visualization &vis) const override;
++    virtual Vector postSelection(int selected) override;
++    virtual void movement(int selected, const Vector &pos) override;
++    virtual void updateBaseMesh() override;
++    virtual bool reload() override;
++
++    virtual ~DBS();
++
++    static double fullness;
++
++private:
++    size_t degree[2];
++    size_t num[2];
++    std::vector<double> knots_u;
++    std::vector<double> knots_v;
++    std::vector<Vector> control_points;
++    std::vector<std::vector<Vector>> control_points_matrix;
++
++
++private:
++    void calcControlPoints();
++
++    std::map<size_t, bool> innerPoint;
++
++    static std::vector<Geometry::Point3D> toPoint3DVec (const std::vector<Vector>& in);
++    static std::vector<Vector> toVec3DVec (const std::vector<Geometry::Point3D>& in);
++    static Geometry::Point3D toPoint3D (const Vector& in);
++    static Vector toVec3D (const Geometry::Point3D& in);
++};
++
++#endif // DBS_H
+diff --git a/geometry.hh b/geometry.hh
+new file mode 100644
+index 0000000..c7dbf64
+--- /dev/null
++++ b/geometry.hh
+@@ -0,0 +1,280 @@
++#pragma once
++
++#include <array>
++#include <iostream>
++#include <list>
++#include <memory>
++#include <vector>
++
++namespace Geometry {
++
++const double epsilon = 1.0e-8;
++
++class Vector2D;
++class Vector3D;
++class BSCurve;
++
++using Point2D = Vector2D;
++using Point3D = Vector3D;
++using DoubleVector = std::vector<double>;
++using DoubleMatrix = std::vector<DoubleVector>;
++using Vector2DVector = std::vector<Vector2D>;
++using Vector2DMatrix = std::vector<Vector2DVector>;
++using VectorVector = std::vector<Vector3D>;
++using VectorMatrix = std::vector<VectorVector>;
++using Point2DVector = std::vector<Point2D>;
++using Point2DMatrix = std::vector<Point2DVector>;
++using PointVector = std::vector<Point3D>;
++using PointMatrix = std::vector<PointVector>;
++
++class Vector2D {
++public:
++  // Constructors
++  Vector2D();
++  explicit Vector2D(const double *coords);
++  Vector2D(double x, double y);
++
++  // Assignments
++  Vector2D &operator+=(const Vector2D &v);
++  Vector2D &operator-=(const Vector2D &v);
++  Vector2D &operator*=(double x);
++  Vector2D &operator/=(double x);
++
++  // Coordinates
++  double *data();
++  const double *data() const;
++  double &operator[](size_t i);
++  const double &operator[](size_t i) const;
++
++  // Arithmetic
++  Vector2D operator-() const;
++  Vector2D operator+(const Vector2D &v) const;
++  Vector2D operator-(const Vector2D &v) const;
++  double operator*(const Vector2D &v) const;
++  Vector2D operator*(double x) const;
++  Vector2D operator/(double x) const;
++
++  // Other
++  double norm() const;
++  double normSqr() const;
++  Vector2D &normalize();
++  Vector2D normalized() const;
++
++private:
++  std::array<double, 2> v_;
++};
++
++std::ostream &operator<<(std::ostream &os, const Vector2D &v);
++std::istream &operator>>(std::istream &is, Vector2D &v);
++
++class Vector3D {
++public:
++  // Constructors
++  Vector3D();
++  explicit Vector3D(const double *coords);
++  Vector3D(double x, double y, double z);
++
++  // Assignments
++  Vector3D &operator+=(const Vector3D &v);
++  Vector3D &operator-=(const Vector3D &v);
++  Vector3D &operator*=(double x);
++  Vector3D &operator/=(double x);
++
++  // Coordinates
++  double *data();
++  const double *data() const;
++  double &operator[](size_t i);
++  const double &operator[](size_t i) const;
++
++  // Arithmetic
++  Vector3D operator-() const;
++  Vector3D operator+(const Vector3D &v) const;
++  Vector3D operator-(const Vector3D &v) const;
++  Vector3D operator^(const Vector3D &v) const;
++  double operator*(const Vector3D &v) const;
++  Vector3D operator*(double x) const;
++  Vector3D operator/(double x) const;
++
++  // Other
++  double norm() const;
++  double normSqr() const;
++  Vector3D &normalize();
++  Vector3D normalized() const;
++
++private:
++  std::array<double, 3> v_;
++};
++
++std::ostream &operator<<(std::ostream &os, const Vector3D &v);
++std::istream &operator>>(std::istream &is, Vector3D &v);
++
++class Matrix3x3 {
++public:
++  // Constructors
++  Matrix3x3() = default;
++  explicit Matrix3x3(const double *values);        // row-major
++  Matrix3x3(std::initializer_list<double> values); // row-major
++
++  // Special matrices
++  static Matrix3x3 identity();
++  static Matrix3x3 rotation(const Vector3D &axis, double angle);
++
++  const double &operator()(size_t i, size_t j) const;
++  double &operator()(size_t i, size_t j);
++  const double *data() const;
++
++  // Arithmetic
++  Matrix3x3 operator+(const Matrix3x3 &m) const;
++  Matrix3x3 &operator+=(const Matrix3x3 &m);
++  Matrix3x3 operator*(double x) const;
++  Matrix3x3 &operator*=(double x);
++  Vector3D operator*(const Vector3D &v) const;
++  Matrix3x3 operator*(const Matrix3x3 &m) const;
++  Matrix3x3 &operator*=(const Matrix3x3 &m);
++
++  double trace() const;
++  Matrix3x3 adjugate() const;
++  Matrix3x3 inverse() const;
++
++private:
++  std::array<double, 9> m_;
++};
++
++class BSBasis {
++public:
++  // Constructors
++  BSBasis();
++  BSBasis(const BSBasis &) = default;
++  BSBasis(size_t degree, const DoubleVector &knots);
++  BSBasis &operator=(const BSBasis &) = default;
++
++  // Properties
++  size_t degree() const;
++  void setDegree(size_t degree);
++  const DoubleVector &knots() const;
++  DoubleVector &knots();
++  double low() const;
++  double high() const;
++
++  // Utilities
++  void reverse();
++  void normalize();
++  size_t findSpan(double u) const;
++  size_t findSpanWithMultiplicity(double u, size_t &multi) const;
++  void basisFunctions(size_t i, double u, DoubleVector &coeff) const;
++  void basisFunctionsAll(size_t i, double u, DoubleMatrix &coeff) const;
++  void basisFunctionDerivatives(size_t i, double u, size_t nr_der, DoubleMatrix &coeff) const;
++
++private:
++  size_t p_;
++  DoubleVector knots_;
++};
++
++class BSCurve {
++public:
++  // Constructors
++  BSCurve();
++  BSCurve(const BSCurve &) = default;
++  BSCurve(const PointVector &cpts);
++  BSCurve(size_t degree, const DoubleVector &knots, const PointVector &cpts);
++  BSCurve &operator=(const BSCurve &) = default;
++
++  // Evaluation
++  Point3D eval(double u) const;
++  Point3D eval(double u, size_t nr_der, VectorVector &der) const;
++
++  // Coordinates
++  const PointVector &controlPoints() const;
++  PointVector &controlPoints();
++
++  // Parameterization
++  const BSBasis &basis() const;
++  void reverse();
++  void normalize();
++
++  // Other
++  double arcLength(double from, double to) const;
++  BSCurve insertKnot(double u, size_t r) const;
++  DoubleVector intersectWithPlane(const Point3D &p, const Vector3D &n) const;
++
++private:
++  BSCurve insertKnot(double u, size_t k, size_t s, size_t r) const;
++
++  size_t n_;
++  BSBasis basis_;
++  PointVector cp_;
++};
++
++class BSSurface {
++public:
++  // Constructors
++  BSSurface();
++  BSSurface(const BSSurface &) = default;
++  BSSurface(size_t deg_u, size_t deg_v, const PointVector &cpts);
++  BSSurface(size_t deg_u, size_t deg_v, const DoubleVector &knots_u, const DoubleVector &knots_v,
++            const PointVector &cpts);
++  BSSurface &operator=(const BSSurface &) = default;
++
++  // Evaluation
++  Point3D eval(double u, double v) const;
++  Point3D eval(double u, double v, size_t nr_der, VectorMatrix &der) const;
++
++  // Coordinates
++  std::array<size_t, 2> numControlPoints() const;
++  Point3D controlPoint(size_t i, size_t j) const;
++  Point3D &controlPoint(size_t i, size_t j);
++  const PointVector &controlPoints() const;
++  PointVector &controlPoints();
++
++  // Parameterization
++  const BSBasis &basisU() const;
++  const BSBasis &basisV() const;
++  void swapUV();
++  void reverseU();
++  void reverseV();
++  void normalize();
++
++  // Algorithms
++  BSSurface insertKnotU(double u, size_t r) const;
++  BSSurface insertKnotV(double v, size_t r) const;
++
++private:
++  BSSurface insertKnotU(double u, size_t k, size_t s, size_t r) const;
++  BSSurface insertKnotV(double v, size_t k, size_t s, size_t r) const;
++
++  size_t n_u_, n_v_;
++  BSBasis basis_u_, basis_v_;
++  PointVector cp_;
++};
++
++class TriMesh {
++public:
++  using Triangle = std::array<size_t, 3>;
++
++  // Mesh building
++  void clear();
++  void resizePoints(size_t n);
++  void setPoints(const PointVector &pv);
++  void addTriangle(size_t a, size_t b, size_t c);
++  void setTriangles(const std::list<Triangle> &tl);
++  TriMesh &append(const TriMesh &other);
++  TriMesh &insert(const TriMesh &other, double tolerance);
++
++  // I/O
++  Point3D &operator[](size_t i);
++  const Point3D &operator[](size_t i) const;
++  const PointVector &points() const;
++  const std::list<Triangle> &triangles() const;
++  static TriMesh readOBJ(std::string filename);
++  void writeOBJ(std::string filename) const;
++  void writeSTL(std::string filename) const;
++
++  const Triangle &closestTriangle(const Point3D &p) const;
++  Point3D projectToTriangle(const Point3D &p, const Triangle &tri) const;
++
++private:
++  PointVector points_;
++  std::list<Triangle> triangles_;
++};
++
++} // namespace Geometry
+diff --git a/matrix3x3.cc b/matrix3x3.cc
+new file mode 100644
+index 0000000..bf112e2
+--- /dev/null
++++ b/matrix3x3.cc
+@@ -0,0 +1,161 @@
++#include <algorithm>
++#include <cmath>
++#include <stdexcept>
++
++#include "geometry.hh"
++
++namespace Geometry {
++
++Matrix3x3::Matrix3x3(const double *values) {
++  std::copy_n(values, 9, m_.begin());
++}
++
++Matrix3x3::Matrix3x3(std::initializer_list<double> values) {
++  if (values.size() != 9)
++    throw std::invalid_argument("Matrix3x3 needs 9 values");
++  std::copy(values.begin(), values.end(), m_.begin());
++}
++
++Matrix3x3
++Matrix3x3::identity() {
++  Matrix3x3 I;
++  I.m_.fill(0.0);
++  I.m_[0] = 1.0;
++  I.m_[4] = 1.0;
++  I.m_[8] = 1.0;
++  return I;
++}
++
++Matrix3x3
++Matrix3x3::rotation(const Vector3D &axis, double angle) {
++  Matrix3x3 A, B;
++  A.m_[0] = 0.0;      A.m_[1] = -axis[2]; A.m_[2] = axis[1];
++  A.m_[3] = axis[2];  A.m_[4] = 0.0;      A.m_[5] = -axis[0];
++  A.m_[6] = -axis[1]; A.m_[7] = axis[0];  A.m_[8] = 0.0;
++  for (size_t i = 0; i < 3; ++i)
++    for (size_t j = 0; j < 3; ++j)
++      B.m_[3*i+j] = axis[i] * axis[j];
++  return identity() * std::cos(angle) + A * std::sin(angle) + B * (1.0 - std::cos(angle));
++}
++
++Matrix3x3
++Matrix3x3::operator+(const Matrix3x3 &m) const {
++  Matrix3x3 result;
++  for (size_t i = 0; i < 9; ++i)
++    result.m_[i] = m_[i] + m.m_[i];
++  return result;
++}
++
++Matrix3x3 &
++Matrix3x3::operator+=(const Matrix3x3 &m) {
++  for (size_t i = 0; i < 9; ++i)
++    m_[i] += m.m_[i];
++  return *this;
++}
++
++Matrix3x3
++Matrix3x3::operator*(double x) const {
++  Matrix3x3 result;
++  for (size_t i = 0; i < 9; ++i)
++    result.m_[i] = m_[i] * x;
++  return result;
++}
++
++Matrix3x3 &
++Matrix3x3::operator*=(double x) {
++  for (size_t i = 0; i < 9; ++i)
++    m_[i] *= x;
++  return *this;
++}
++
++Vector3D
++Matrix3x3::operator*(const Vector3D &v) const {
++  Vector3D result;
++  for (size_t i = 0; i < 3; ++i) {
++    double sum = 0.0;
++    for (size_t k = 0; k < 3; ++k)
++      sum += m_[3*i+k] * v[k];
++    result[i] = sum;
++  }
++  return result;
++}
++
++Matrix3x3
++Matrix3x3::operator*(const Matrix3x3 &m) const {
++  Matrix3x3 result;
++  for (size_t i = 0; i < 3; ++i)
++    for (size_t j = 0; j < 3; ++j) {
++      double sum = 0.0;
++      for (size_t k = 0; k < 3; ++k)
++        sum += m_[3*i+k] * m.m_[3*k+j];
++      result.m_[3*i+j] = sum;
++    }
++  return result;
++}
++
++Matrix3x3 &
++Matrix3x3::operator*=(const Matrix3x3 &m) {
++  *this = (*this) * m;
++  return *this;
++}
++
++double Matrix3x3::trace() const {
++  return m_[0] + m_[4] + m_[8];
++}
++
++Matrix3x3 Matrix3x3::adjugate() const {
++  Matrix3x3 r;
++
++  r.m_[0] = m_[4] * m_[8] - m_[5] * m_[7];
++  r.m_[1] = m_[2] * m_[7] - m_[1] * m_[8];
++  r.m_[2] = m_[1] * m_[5] - m_[2] * m_[4];
++
++  r.m_[3] = m_[5] * m_[6] - m_[3] * m_[8];
++  r.m_[4] = m_[0] * m_[8] - m_[2] * m_[6];
++  r.m_[5] = m_[3] * m_[2] - m_[0] * m_[5];
++
++  r.m_[6] = m_[3] * m_[7] - m_[4] * m_[6];
++  r.m_[7] = m_[1] * m_[6] - m_[0] * m_[7];
++  r.m_[8] = m_[0] * m_[4] - m_[1] * m_[3];
++
++  return r;
++}
++
++Matrix3x3 Matrix3x3::inverse() const {
++  double det00 = m_[4] * m_[8] - m_[7] * m_[5];
++  double det01 = m_[5] * m_[6] - m_[3] * m_[8];
++  double det02 = m_[3] * m_[7] - m_[4] * m_[6];
++  double det = m_[0] * det00 + m_[1] * det01 + m_[2] * det02;
++  double invdet = 1 / det;
++
++  Matrix3x3 result;
++
++  result.m_[0] = det00 * invdet;
++  result.m_[1] = (m_[7] * m_[2] - m_[8] * m_[1]) * invdet;
++  result.m_[2] = (m_[1] * m_[5] - m_[2] * m_[4]) * invdet;
++
++  result.m_[3] = det01 * invdet;
++  result.m_[4] = (m_[8] * m_[0] - m_[6] * m_[2]) * invdet;
++  result.m_[5] = (m_[2] * m_[3] - m_[0] * m_[5]) * invdet;
++
++  result.m_[6] = det02 * invdet;
++  result.m_[7] = (m_[6] * m_[1] - m_[7] * m_[0]) * invdet;
++  result.m_[8] = (m_[0] * m_[4] - m_[1] * m_[3]) * invdet;
++
++  return result;
++}
++
++const double &Matrix3x3::operator()(size_t i, size_t j) const {
++  return m_[i * 3 + j];
++}
++
++double &Matrix3x3::operator()(size_t i, size_t j) {
++  return m_[i * 3 + j];
++}
++
++const double *Matrix3x3::data() const {
++  return &m_[0];
++}
++
++
++} // namespace Geometry
+diff --git a/trimesh.cc b/trimesh.cc
+new file mode 100644
+index 0000000..b3af84d
+--- /dev/null
++++ b/trimesh.cc
+@@ -0,0 +1,271 @@
++#include "geometry.hh"
++
++#include <cmath>
++#include <iostream>
++#include <fstream>
++#include <sstream>
++#include <string>
++
++namespace Geometry {
++
++void
++TriMesh::clear() {
++  points_.clear();
++  triangles_.clear();
++}
++
++void
++TriMesh::resizePoints(size_t n) {
++  points_.resize(n);
++}
++
++void
++TriMesh::setPoints(const PointVector &pv) {
++  points_ = pv;
++}
++
++void
++TriMesh::addTriangle(size_t a, size_t b, size_t c) {
++  triangles_.push_back({a, b, c});
++}
++
++void
++TriMesh::setTriangles(const std::list<Triangle> &tl) {
++  triangles_ = tl;
++}
++
++Point3D &
++TriMesh::operator[](size_t i) {
++  return points_[i];
++}
++ 
++const Point3D &
++TriMesh::operator[](size_t i) const {
++  return points_[i];
++}
++
++const PointVector &
++TriMesh::points() const {
++  return points_;
++}
++
++const std::list<TriMesh::Triangle> &
++TriMesh::triangles() const {
++  return triangles_;
++}
++
++Point3D
++TriMesh::projectToTriangle(const Point3D &p, const Triangle &tri) const {
++  const Point3D &q1 = points_[tri[0]], &q2 = points_[tri[1]], &q3 = points_[tri[2]];
++  // As in Schneider, Eberly: Geometric Tools for Computer Graphics, Morgan Kaufmann, 2003.
++  // Section 10.3.2, pp. 376-382 (with my corrections)
++  const Point3D &P = p, &B = q1;
++  Vector3D E0 = q2 - q1, E1 = q3 - q1, D = B - P;
++  double a = E0 * E0, b = E0 * E1, c = E1 * E1, d = E0 * D, e = E1 * D;
++  double det = a * c - b * b, s = b * e - c * d, t = b * d - a * e;
++  if (s + t <= det) {
++    if (s < 0) {
++      if (t < 0) {
++        // Region 4
++        if (e < 0) {
++          s = 0.0;
++          t = (-e >= c ? 1.0 : -e / c);
++        } else if (d < 0) {
++          t = 0.0;
++          s = (-d >= a ? 1.0 : -d / a);
++        } else {
++          s = 0.0;
++          t = 0.0;
++        }
++      } else {
++        // Region 3
++        s = 0.0;
++        t = (e >= 0.0 ? 0.0 : (-e >= c ? 1.0 : -e / c));
++      }
++    } else if (t < 0) {
++      // Region 5
++      t = 0.0;
++      s = (d >= 0.0 ? 0.0 : (-d >= a ? 1.0 : -d / a));
++    } else {
++      // Region 0
++      double invDet = 1.0 / det;
++      s *= invDet;
++      t *= invDet;
++    }
++  } else {
++    if (s < 0) {
++      // Region 2
++      double tmp0 = b + d, tmp1 = c + e;
++      if (tmp1 > tmp0) {
++        double numer = tmp1 - tmp0;
++        double denom = a - 2 * b + c;
++        s = (numer >= denom ? 1.0 : numer / denom);
++        t = 1.0 - s;
++      } else {
++        s = 0.0;
++        t = (tmp1 <= 0.0 ? 1.0 : (e >= 0.0 ? 0.0 : -e / c));
++      }
++    } else if (t < 0) {
++      // Region 6
++      double tmp0 = b + e, tmp1 = a + d;
++      if (tmp1 > tmp0) {
++        double numer = tmp1 - tmp0;
++        double denom = c - 2 * b + a;
++        t = (numer >= denom ? 1.0 : numer / denom);
++        s = 1.0 - t;
++      } else {
++        t = 0.0;
++        s = (tmp1 <= 0.0 ? 1.0 : (d >= 0.0 ? 0.0 : -d / a));
++      }
++    } else {
++      // Region 1
++      double numer = c + e - b - d;
++      if (numer <= 0) {
++        s = 0;
++      } else {
++        double denom = a - 2 * b + c;
++        s = (numer >= denom ? 1.0 : numer / denom);
++      }
++      t  = 1.0 - s;
++    }
++  }
++  return B + E0 * s + E1 * t;
++}
++
++const TriMesh::Triangle &
++TriMesh::closestTriangle(const Point3D &p) const {
++  // Trivial (slow) implementation
++  std::list<Triangle>::const_iterator i = triangles_.begin(), result = i;
++  double min = (projectToTriangle(p, *i) - p).norm();
++  while (++i != triangles_.end()) {
++    double d = (projectToTriangle(p, *i) - p).norm();
++    if (d < min) {
++      min = d;
++      result = i;
++    }
++  }
++  return *result;
++}
++
++TriMesh
++TriMesh::readOBJ(std::string filename) {
++  TriMesh result;
++  std::ifstream f(filename);
++  f.exceptions(std::ios::failbit | std::ios::badbit);
++  bool points_set = false;
++  std::string line;
++  std::istringstream ss;
++  Point3D p;
++  TriMesh::Triangle t;
++  PointVector pv;
++  while (!f.eof()) {
++    std::getline(f, line);
++    f >> std::ws;
++    if (line.empty())
++      continue;
++    switch (line[0]) {
++    case 'v':
++      if (line[1] != ' ')       // we don't handle vt & vn
++        break;
++      ss.str(line);
++      ss.seekg(2); // skip the first two characters
++      ss >> p[0] >> p[1] >> p[2];
++      pv.push_back(p);
++      break;
++    case 'f':
++      if (!points_set) {
++        result.setPoints(pv);
++        points_set = true;
++      }
++      ss.str(line);
++      ss.seekg(2); // skip the first two characters
++      ss >> t[0];
++      ss.ignore(line.size(), ' ');
++      ss >> t[1];
++      ss.ignore(line.size(), ' ');
++      ss >> t[2];
++      result.addTriangle(t[0] - 1, t[1] - 1, t[2] - 1);
++      break;
++    default:
++      break;
++    }
++  }
++  return result;
++}
++
++void
++TriMesh::writeOBJ(std::string filename) const {
++  std::ofstream f(filename);
++  f.exceptions(std::ios::failbit | std::ios::badbit);
++  for (const auto &p : points_)
++    f << "v " << p[0] << ' ' << p[1] << ' ' << p[2] << std::endl;
++  for (const auto &t : triangles_)
++    f << "f " << t[0] + 1 << ' ' << t[1] + 1 << ' ' << t[2] + 1 << std::endl;
++}
++
++template<typename T>
++static void writeType(std::ostream &os, T x) {
++  os.write(reinterpret_cast<const char *>(&x), sizeof(T));
++}
++
++static void writeVector(std::ostream &os, const Vector3D &v) {
++  writeType<float>(os, v[0]);
++  writeType<float>(os, v[1]);
++  writeType<float>(os, v[2]);
++}
++
++void
++TriMesh::writeSTL(std::string filename) const {
++  std::ofstream f(filename, std::ios::binary);
++  f.exceptions(std::ios::failbit | std::ios::badbit);
++  std::string comment("libgeom export");
++  comment.resize(80, ' ');
++  f.write(comment.c_str(), 80);
++  writeType<uint32_t>(f, triangles_.size());
++  for (const auto &tri : triangles_) {
++    const auto &p0 = points_[tri[0]], &p1 = points_[tri[1]], &p2 = points_[tri[2]];
++    auto normal = ((p1 - p0) ^ (p2 - p0)).normalize();
++    writeVector(f, normal);
++    writeVector(f, p0);
++    writeVector(f, p1);
++    writeVector(f, p2);
++    writeType<uint16_t>(f, 0);
++  };
++}
++
++TriMesh &
++TriMesh::append(const TriMesh &other) {
++  size_t n = points_.size();
++  for (const auto &p : other.points())
++    points_.push_back(p);
++  for (const auto &tri : other.triangles())
++    addTriangle(n + tri[0], n + tri[1], n + tri[2]);
++  return *this;
++}
++
++TriMesh &
++TriMesh::insert(const TriMesh &other, double tolerance) {
++  tolerance *= tolerance;
++  const auto &pts = other.points();
++  size_t n = points_.size(), m = pts.size();
++  std::vector<size_t> vertex_map(m);
++  size_t next = n;
++  for (size_t j = 0; j < m; ++j) {
++    bool found = false;
++    for (size_t i = 0; i < n; ++i)
++      if ((points_[i] - pts[j]).normSqr() <= tolerance) {
++        found = true;
++        vertex_map[j] = i;
++        break;
++      }
++    if (!found) {
++      points_.push_back(pts[j]);
++      vertex_map[j] = next++;
++    }
++  }
++  for (const auto &tri : other.triangles())
++    addTriangle(vertex_map[tri[0]], vertex_map[tri[1]], vertex_map[tri[2]]);
++  return *this;
++}
++
++} // namespace Geometry
+diff --git a/vector.cc b/vector.cc
+new file mode 100644
+index 0000000..8e512ec
+--- /dev/null
++++ b/vector.cc
+@@ -0,0 +1,257 @@
++#include <cmath>
++
++#include "geometry.hh"
++
++namespace Geometry {
++
++Vector2D::Vector2D() {
++}
++
++Vector2D::Vector2D(const double *coords) {
++  v_[0] = coords[0];
++  v_[1] = coords[1];
++}
++
++Vector2D::Vector2D(double x, double y)
++  : v_({x,y}) {
++}
++
++Vector2D &
++Vector2D::operator+=(const Vector2D &v) {
++  v_[0] += v.v_[0];
++  v_[1] += v.v_[1];
++  return *this;
++}
++
++Vector2D &
++Vector2D::operator-=(const Vector2D &v) {
++  v_[0] -= v.v_[0];
++  v_[1] -= v.v_[1];
++  return *this;
++}
++
++Vector2D &
++Vector2D::operator*=(double x) {
++  v_[0] *= x;
++  v_[1] *= x;
++  return *this;
++}
++
++Vector2D &
++Vector2D::operator/=(double x) {
++  v_[0] /= x;
++  v_[1] /= x;
++  return *this;
++}
++
++double *
++Vector2D::data() {
++  return v_.data();
++}
++
++const double *
++Vector2D::data() const {
++  return v_.data();
++}
++
++double &
++Vector2D::operator[](size_t i) {
++  return v_[i];
++}
++
++const double &
++Vector2D::operator[](size_t i) const {
++  return v_[i];
++}
++
++Vector2D
++Vector2D::operator-() const {
++  return Vector2D(-v_[0], -v_[1]);
++}
++
++Vector2D
++Vector2D::operator+(const Vector2D &v) const {
++  return Vector2D(v_[0] + v.v_[0], v_[1] + v.v_[1]);
++}
++
++Vector2D
++Vector2D::operator-(const Vector2D &v) const {
++  return Vector2D(v_[0] - v.v_[0], v_[1] - v.v_[1]);
++}
++
++double
++Vector2D::operator*(const Vector2D &v) const {
++  return v_[0] * v.v_[0] + v_[1] * v.v_[1];
++}
++
++Vector2D
++Vector2D::operator*(double x) const {
++  return Vector2D(v_[0] * x, v_[1] * x);
++}
++
++Vector2D
++Vector2D::operator/(double x) const {
++  return Vector2D(v_[0] / x, v_[1] / x);
++}
++
++double Vector2D::norm() const {
++  return std::sqrt(normSqr());
++}
++
++double
++Vector2D::normSqr() const {
++  return operator*(*this);
++}
++
++Vector2D &
++Vector2D::normalize() {
++  return operator*=(1.0 / norm());
++}
++
++Vector2D
++Vector2D::normalized() const {
++  return Vector2D(*this).normalize();
++}
++
++std::ostream &operator<<(std::ostream &os, const Vector2D &v) {
++  os << v[0] << ' ' << v[1];
++  return os;
++}
++
++std::istream &operator>>(std::istream &is, Vector2D &v) {
++  is >> v[0] >> v[1];
++  return is;
++}
++
++Vector3D::Vector3D() {
++}
++
++Vector3D::Vector3D(const double *coords) {
++  v_[0] = coords[0];
++  v_[1] = coords[1];
++  v_[2] = coords[2];
++}
++
++Vector3D::Vector3D(double x, double y, double z)
++  : v_({x,y,z}) {
++}
++
++Vector3D &
++Vector3D::operator+=(const Vector3D &v) {
++  v_[0] += v.v_[0];
++  v_[1] += v.v_[1];
++  v_[2] += v.v_[2];
++  return *this;
++}
++
++Vector3D &
++Vector3D::operator-=(const Vector3D &v) {
++  v_[0] -= v.v_[0];
++  v_[1] -= v.v_[1];
++  v_[2] -= v.v_[2];
++  return *this;
++}
++
++Vector3D &
++Vector3D::operator*=(double x) {
++  v_[0] *= x;
++  v_[1] *= x;
++  v_[2] *= x;
++  return *this;
++}
++
++Vector3D &
++Vector3D::operator/=(double x) {
++  v_[0] /= x;
++  v_[1] /= x;
++  v_[2] /= x;
++  return *this;
++}
++
++double *
++Vector3D::data() {
++  return v_.data();
++}
++
++const double *
++Vector3D::data() const {
++  return v_.data();
++}
++
++double &
++Vector3D::operator[](size_t i) {
++  return v_[i];
++}
++
++const double &
++Vector3D::operator[](size_t i) const {
++  return v_[i];
++}
++
++Vector3D
++Vector3D::operator-() const {
++  return Vector3D(-v_[0], -v_[1], -v_[2]);
++}
++
++Vector3D
++Vector3D::operator+(const Vector3D &v) const {
++  return Vector3D(v_[0] + v.v_[0], v_[1] + v.v_[1], v_[2] + v.v_[2]);
++}
++
++Vector3D
++Vector3D::operator-(const Vector3D &v) const {
++  return Vector3D(v_[0] - v.v_[0], v_[1] - v.v_[1], v_[2] - v.v_[2]);
++}
++
++Vector3D
++Vector3D::operator^(const Vector3D &v) const {
++  return Vector3D(v_[1] * v.v_[2] - v_[2] * v.v_[1],
++                  v_[2] * v.v_[0] - v_[0] * v.v_[2],
++                  v_[0] * v.v_[1] - v_[1] * v.v_[0]);
++}
++
++double
++Vector3D::operator*(const Vector3D &v) const {
++  return v_[0] * v.v_[0] + v_[1] * v.v_[1] + v_[2] * v.v_[2];
++}
++
++Vector3D
++Vector3D::operator*(double x) const {
++  return Vector3D(v_[0] * x, v_[1] * x, v_[2] * x);
++}
++
++Vector3D
++Vector3D::operator/(double x) const {
++  return Vector3D(v_[0] / x, v_[1] / x, v_[2] / x);
++}
++
++double Vector3D::norm() const {
++  return std::sqrt(normSqr());
++}
++
++double
++Vector3D::normSqr() const {
++  return operator*(*this);
++}
++
++Vector3D &
++Vector3D::normalize() {
++  return operator*=(1.0 / norm());
++}
++
++Vector3D
++Vector3D::normalized() const {
++  return Vector3D(*this).normalize();
++}
++
++std::ostream &operator<<(std::ostream &os, const Vector3D &v) {
++  os << v[0] << ' ' << v[1] << ' ' << v[2];
++  return os;
++}
++
++std::istream &operator>>(std::istream &is, Vector3D &v) {
++  is >> v[0] >> v[1] >> v[2];
++  return is;
++}
++
++} // namespace Geometry
+diff --git a/viewer.cc b/viewer.cc
+index 647f1c5..8b0de95 100644
+--- a/viewer.cc
++++ b/viewer.cc
+@@ -2,7 +2,9 @@
+ 
+ #include "bezier.hh"
+ #include "mesh.hh"
++#include "dbs.hh"
+ #include "viewer.hh"
++#include "dbs.hh"
+ 
+ Viewer::Viewer(QWidget *parent) : QGLViewer(parent) {
+   setSelectRegionWidth(10);
+@@ -57,6 +59,18 @@ void Viewer::setSlicingScaling(double scaling) {
+   vis.slicing_scaling = scaling;
+ }
+ 
++double Viewer::getFullness() const
++{
++  return vis.fullness;
++}
++
++void Viewer::setFullness(double fullness)
++{
++  vis.fullness = fullness;
++  update();
++}
++
+ void Viewer::deleteObjects() {
+   objects.clear();
+ }
+@@ -65,6 +79,8 @@ bool Viewer::open(std::string filename) {
+   std::shared_ptr<Object> surface;
+   if (filename.ends_with(".bzr"))
+     surface = std::make_shared<Bezier>(filename);
++  else if (filename.ends_with(".dbs"))
++      surface = std::make_shared<DBS>(filename);
+   else
+     surface = std::make_shared<Mesh>(filename);
+   if (!surface->valid())
+diff --git a/viewer.hh b/viewer.hh
+index 1e475c2..121c8c8 100644
+--- a/viewer.hh
++++ b/viewer.hh
+@@ -20,6 +20,8 @@ public:
+   void setSlicingDir(double x, double y, double z);
+   double getSlicingScaling() const;
+   void setSlicingScaling(double scaling);
++  double getFullness () const;
++  void setFullness (double fullness);
+   void deleteObjects();
+   bool open(std::string filename);
+ 
+diff --git a/visualization.hh b/visualization.hh
+index b88bf87..ba9a274 100644
+--- a/visualization.hh
++++ b/visualization.hh
+@@ -32,6 +32,9 @@ struct Visualization {
+   Vector slicing_dir;
+   double slicing_scaling;
+ 
++  // DBS
++  double fullness = 0.5;
++
+   // Textures
+   static GLuint isophote_texture, environment_texture, slicing_texture;
+   GLuint current_isophote_texture;
+diff --git a/window.cc b/window.cc
+index 0f9928e..cb31155 100644
+--- a/window.cc
++++ b/window.cc
+@@ -47,6 +47,10 @@ Window::Window(QApplication *parent) :
+   slicingAction->setStatusTip(tr("Set contouring direction and scaling"));
+   connect(slicingAction, &QAction::triggered, this, &Window::setSlicing);
+ 
++  auto fullnessAction = new QAction(tr("Set &fullness parameter"), this);
++  fullnessAction->setStatusTip(tr("Set default B-Spline fullness parameter"));
++  connect(fullnessAction, &QAction::triggered, this, &Window::setFullness);
++
+   auto fileMenu = menuBar()->addMenu(tr("&File"));
+   fileMenu->addAction(openAction);
+   fileMenu->addAction(importAction);
+@@ -56,14 +60,16 @@ Window::Window(QApplication *parent) :
+   visMenu->addAction(cutoffAction);
+   visMenu->addAction(rangeAction);
+   visMenu->addAction(slicingAction);
++  visMenu->addAction(fullnessAction);
+ }
+ 
+ void Window::open(bool clear_others) {
+   auto filename =
+     QFileDialog::getOpenFileName(this, tr("Open File"), last_directory,
+-                                 tr("Readable files (*.obj *.ply *.stl *.bzr);;"
++                                 tr("Readable files (*.obj *.ply *.stl *.bzr *.dbs);;"
+                                     "Mesh (*.obj *.ply *.stl);;"
+                                     "Bézier surface (*.bzr);;"
++                                    "default B-spline (*.dbs);;"
+                                     "All files (*.*)"));
+   if (filename.isEmpty())
+     return;
+@@ -197,6 +203,41 @@ void Window::setSlicing() {
+   }
+ }
+ 
++void Window::setFullness()
++{
++  auto dlg = std::make_unique<QDialog>(this);
++  auto *hb1    = new QHBoxLayout,
++      *hb2    = new QHBoxLayout;
++  auto *vb     = new QVBoxLayout;
++  auto *text_s = new QLabel(tr("Fullness:"));
++  auto *sb_s   = new QDoubleSpinBox;
++  auto *cancel = new QPushButton(tr("Cancel"));
++  auto *ok     = new QPushButton(tr("Ok"));
++
++  sb_s->setDecimals(2);
++  sb_s->setRange(0, 1);
++  sb_s->setSingleStep(0.01);
++  sb_s->setValue(viewer->getFullness());
++  connect(cancel, &QPushButton::pressed, dlg.get(), &QDialog::reject);
++  connect(ok,     &QPushButton::pressed, dlg.get(), &QDialog::accept);
++  ok->setDefault(true);
++
++  hb1->addWidget(text_s);
++  hb1->addWidget(sb_s);
++  hb2->addWidget(cancel);
++  hb2->addWidget(ok);
++  vb->addLayout(hb1);
++  vb->addLayout(hb2);
++
++  dlg->setWindowTitle(tr("Set fullness"));
++  dlg->setLayout(vb);
++
++  if(dlg->exec() == QDialog::Accepted) {
++    viewer->setFullness(sb_s->value());
++    viewer->update();
++  }
++}
++
+ void Window::startComputation(QString message) {
+   statusBar()->showMessage(message);
+   progress->setValue(0);
+diff --git a/window.hh b/window.hh
+index bd9b5ef..5b85542 100644
+--- a/window.hh
++++ b/window.hh
+@@ -18,6 +18,7 @@ private slots:
+   void setCutoff();
+   void setRange();
+   void setSlicing();
++  void setFullness();
+   void startComputation(QString message);
+   void midComputation(int percent);
+   void endComputation();

@@ -1,0 +1,178 @@
+diff --git a/object.cc b/object.cc
+index 3e6c761..de22796 100644
+--- a/object.cc
++++ b/object.cc
+@@ -1,9 +1,14 @@
+ #include "object.hh"
++#include <numbers>
+ 
+ #ifdef USE_JET_FITTING
+ #include "jet-wrapper.hh"
+ #endif
+ 
++const double red = std::numbers::pi * (330.0 / 180.0);
++const double green = std::numbers::pi * (360.0 / 180.0);
++const double blue = std::numbers::pi * (390.0 / 180.0);
++
+ Object::Object(std::string filename) : filename(filename) {
+ }
+ 
+@@ -69,6 +74,21 @@ void Object::draw(const Visualization &vis) const {
+     }
+     glEnable(GL_LIGHTING);
+   }
++
++  if(vis.show_homework_one)
++  {
++    // ha nem problema a kirajzolas modjat nem valtoztattam, ugy gondoltam jobban lathato ha nagyobbak a pontok
++    glPointSize(3);
++    for (auto f : mesh.faces()) {
++      glBegin(GL_POINTS);
++      for (auto v : f.vertices()) {
++        setVertexColor(v);
++        glNormal3dv(mesh.normal(v).data());
++        glVertex3dv(mesh.point(v).data());
++      }
++      glEnd();
++    }
++  }
+   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+ }
+ 
+@@ -76,10 +96,62 @@ void Object::updateBaseMesh() {
+   updateBaseMesh(false, false);
+ }
+ 
++void Object::recalcVertexColor()
++{
++  for (auto f : mesh.faces()) {
++    for (auto vh : f.vertices()) {
++      Color color;
++      color.r = 0.0;
++      color.g = 0.0;
++      color.b = 0.0;
++
++      auto v = OpenMesh::make_smart(vh, &mesh);
++
++      if (mesh.is_boundary(v))
++      {
++        color.g = 1.0;
++      } else
++      {
++        double angle = 0;
++        for (auto h : v.incoming_halfedges()) {
++          double a = mesh.calc_sector_angle(h);
++          angle += std::abs(a);
++        }
++        if (angle < red)
++        {
++          color.r = 1.0;
++        }
++        else if (angle > blue)
++        {
++          color.b = 1.0;
++        }
++
++        if(angle >= red && angle <= green)
++        {
++          double c = (green - angle) / (green - red);
++          color.r = c;
++          color.g = 1.0 - c;
++        }
++
++        if(angle >= green && angle <= blue)
++        {
++          double c = (blue - angle) / (blue - green);
++          color.g = c;
++          color.b = 1.0 - c;
++        }
++      }
++
++
++      vertexColors[v] = color;
++    }
++  }
++}
++
+ void Object::updateBaseMesh(bool own_normal, bool own_mean) {
+   mesh.request_face_normals();
+   mesh.request_vertex_normals();
+   mesh.update_face_normals();
++  recalcVertexColor();
+ 
+ #ifdef USE_JET_FITTING
+ 
+@@ -126,6 +198,12 @@ void Object::updateBaseMesh(bool own_normal, bool own_mean) {
+ #endif // USE_JET_FITTING
+ }
+ 
++void Object::setVertexColor(BaseMesh::VertexHandle vh) const
++{
++  Color color = vertexColors.at(vh);
++  glColor3d(color.r, color.g, color.b);
++}
++
+ Vector Object::normal(BaseMesh::VertexHandle vh) const {
+   auto v = OpenMesh::make_smart(vh, &mesh);
+   Vector n(0.0, 0.0, 0.0);
+diff --git a/object.hh b/object.hh
+index 84aa35c..890f9a4 100644
+--- a/object.hh
++++ b/object.hh
+@@ -3,6 +3,13 @@
+ #include "base-mesh.hh"
+ #include "visualization.hh"
+ 
++struct Color
++{
++    double r;
++    double g;
++    double b;
++};
++
+ class Object {
+ public:
+   explicit Object(std::string filename);
+@@ -20,6 +27,11 @@ protected:
+   virtual Vector normal(BaseMesh::VertexHandle vh) const;
+   virtual double meanCurvature(BaseMesh::VertexHandle vh) const;
+ 
++  void setVertexColor(BaseMesh::VertexHandle vh) const;
++  void recalcVertexColor();
++
++  std::unordered_map<BaseMesh::VertexHandle, Color> vertexColors;
++
+   BaseMesh mesh;
+   std::string filename;
+ };
+diff --git a/viewer.cc b/viewer.cc
+index 647f1c5..eab193c 100644
+--- a/viewer.cc
++++ b/viewer.cc
+@@ -253,9 +253,10 @@ void Viewer::keyPressEvent(QKeyEvent *e) {
+       update();
+       break;
+     case Qt::Key_X:
+-      camera()->setViewDirection(qglviewer::Vec(1.0, 0.0, 0.0));
+-      camera()->setUpVector(qglviewer::Vec(0.0, 1.0, 0.0));
+-      camera()->showEntireScene();
++      //camera()->setViewDirection(qglviewer::Vec(1.0, 0.0, 0.0));
++      //camera()->setUpVector(qglviewer::Vec(0.0, 1.0, 0.0));
++      //camera()->showEntireScene();
++      vis.show_homework_one = !vis.show_homework_one;
+       update();
+       break;
+     case Qt::Key_Y:
+diff --git a/visualization.hh b/visualization.hh
+index b88bf87..34d16ea 100644
+--- a/visualization.hh
++++ b/visualization.hh
+@@ -25,6 +25,8 @@ struct Visualization {
+   VisType type;
+   bool show_control_points, show_solid, show_wireframe;
+ 
++  bool show_homework_one;
++
+   // Mean curvature
+   double mean_min, mean_max, cutoff_ratio;
+ 
