@@ -1,0 +1,39 @@
+﻿Created By AccessData® FTK® Imager 4.7.1.2 
+
+Case Information: 
+Acquired using: ADI4.7.1.2
+Case Number:  
+Evidence Number:  
+Unique Description: 
+Examiner:  
+Notes:  
+
+--------------------------------------------------------------
+
+Information for C:\BME\Hálózatbiztonság\HF1\img:
+
+Physical Evidentiary Item (Source) Information:
+[Device Info]
+ Source Type: Physical
+[Drive Geometry]
+ Bytes per Sector: 512
+ Sector Count: 3,913,728
+[Image]
+ Image Type: Raw (dd)
+ Source data size: 1911 MB
+ Sector count:    3913728
+[Computed Hashes]
+ MD5 checksum:    c76afc7a92e4eea77cb0fad21c257547
+ SHA1 checksum:   1126bd07db25531e5d0ad39aa0623d7ebc8d5b85
+
+Image Information:
+ Acquisition started:   Sat Oct 14 21:01:16 2023
+ Acquisition finished:  Sat Oct 14 21:01:20 2023
+ Segment list:
+  C:\BME\Hálózatbiztonság\HF1\img.E01
+
+Image Verification Results:
+ Verification started:  Sat Oct 14 21:01:20 2023
+ Verification finished: Sat Oct 14 21:01:24 2023
+ MD5 checksum:    c76afc7a92e4eea77cb0fad21c257547 : verified
+ SHA1 checksum:   1126bd07db25531e5d0ad39aa0623d7ebc8d5b85 : verified

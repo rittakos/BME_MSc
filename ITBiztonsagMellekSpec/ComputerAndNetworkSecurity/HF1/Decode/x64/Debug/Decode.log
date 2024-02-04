@@ -1,0 +1,4 @@
+﻿  Decode.cpp
+C:\BME\Hálózatbiztonság\HF1\Decode\Decode.cpp(26,85): warning C4554: '>>': check operator precedence for possible error; use parentheses to clarify precedence
+C:\BME\Hálózatbiztonság\HF1\Decode\Decode.cpp(51,19): warning C4101: 'bVar1': unreferenced local variable
+  Decode.vcxproj -> C:\BME\Hálózatbiztonság\HF1\Decode\x64\Debug\Decode.exe

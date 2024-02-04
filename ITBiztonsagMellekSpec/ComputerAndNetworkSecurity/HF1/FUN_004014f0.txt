@@ -1,0 +1,37 @@
+undefined8 FUN_004014f0(void)
+
+{
+  byte bVar1;
+  undefined8 uVar2;
+  uint local_34;
+  size_t local_30;
+  undefined4 local_28;
+  int local_24;
+  FILE *local_20;
+  FILE *local_18;
+  uint local_c;
+  
+  FUN_004023f0();
+  local_18 = fopen("input.bin","rb");
+  local_20 = fopen("output.bin","wb");
+  local_c = 0xae541251;
+  local_24 = 0x11552211;
+  local_28 = 2;
+  if ((local_18 == (FILE *)0x0) || (local_20 == (FILE *)0x0)) {
+    perror("Error opening files");
+    uVar2 = 1;
+  }
+  else {
+    while (local_30 = fread(&local_34,1,4,local_18), local_30 != 0) {
+      bVar1 = (byte)local_28 & 0x1f;
+      local_34 = (local_34 ^ local_c) << bVar1 | (local_34 ^ local_c) >> 0x20 - bVar1;
+      local_c = local_c * local_24;
+      fwrite(&local_34,1,local_30,local_20);
+    }
+    fclose(local_18);
+    fclose(local_20);
+    puts("Obfuscation completed.");
+    uVar2 = 0;
+  }
+  return uVar2;
+}

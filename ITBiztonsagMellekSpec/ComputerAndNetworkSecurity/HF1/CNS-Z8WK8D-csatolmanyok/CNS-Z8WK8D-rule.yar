@@ -1,0 +1,1 @@
+rule HFRule{    strings:        $reg = /\([A-Za-z0-9_]+\s*\^\s*[A-Za-z0-9_]+_c\)\s*<<\s*[A-Za-z0-9_]+\s*\|\s*\([A-Za-z0-9_]+\s*\^\s*[A-Za-z0-9_]+\)\s*>>\s*[0x]?[0-9]+\s*-\s*[A-Za-z0-9_]*;/        $regBin = {33 45 fc 89 45 d4 8b 55 d4 8b 45 e0 89 c1 d3 c2}    condition:        $reg or $regBin}
