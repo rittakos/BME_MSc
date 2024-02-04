@@ -1,0 +1,10 @@
+*~
+.\#*
+*.stl
+*.ply
+build
+debug
+release
+CMake*
+TAGS
+.vs*

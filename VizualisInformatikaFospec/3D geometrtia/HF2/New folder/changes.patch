@@ -1,0 +1,312 @@
+diff --git a/dbs.cc b/dbs.cc
+index c6fcf30..589f59b 100644
+--- a/dbs.cc
++++ b/dbs.cc
+@@ -23,21 +23,6 @@ void DBS::draw(const Visualization &vis) const {
+       glDisable(GL_LIGHTING);
+       glLineWidth(3.0);
+       glColor3d(0.3, 0.3, 1.0);
+-      /*size_t m = degree[1] + 1;
+-      for (size_t k = 0; k < 2; ++k)
+-      {
+-          for (size_t i = 0; i <= degree[k]; ++i) {
+-              glBegin(GL_LINE_STRIP);
+-              for (size_t j = 0; j <= degree[1-k]; ++j) {
+-                  size_t const index = k ? j * m + i : i * m + j;
+-                  const auto &p = control_points[index];
+-                  glVertex3dv(p.data());
+-              }
+-              glEnd();
+-          }
+-      }*/
+-
+-
+ 
+       for(size_t i = 0; i < num[0] - 1; ++i) // u
+       {
+@@ -60,8 +45,7 @@ void DBS::draw(const Visualization &vis) const {
+       glPointSize(8.0);
+       glColor3d(1.0, 0.0, 1.0);
+       glBegin(GL_POINTS);
+-      /*for (const auto &p : control_points)
+-          glVertex3dv(p.data());*/
++
+       for(size_t idx = 0; idx < control_points.size(); ++idx)
+       {
+           if(innerPoint.at(idx))
+@@ -94,7 +78,7 @@ Vector DBS::postSelection(int selected) {
+ void DBS::movement(int selected, const Vector &pos) {
+   if(innerPoint[selected])
+       return;
+-  //control_points[selected] = pos;
++
+   size_t i = selected % num[0];
+   size_t j = selected / num[0];
+   control_points_matrix[i][j] = pos;
+@@ -113,6 +97,9 @@ void DBS::updateBaseMesh() {
+ 
+   Geometry::BSSurface bSSurface (d_0, d_1, knots_u, knots_v, DBS::toPoint3DVec(control_points));
+ 
++  minU = control_points[0][0];
++  minV = control_points[0][1];
++
+   std::vector<double> coeff_u, coeff_v;
+   for (size_t i = 0; i < resolution; ++i)
+   {
+@@ -120,6 +107,19 @@ void DBS::updateBaseMesh() {
+       for (size_t j = 0; j < resolution; ++j) {
+           double v = (double)j / (double)(resolution - 1);
+           Vector p = DBS::toVec3D(bSSurface.eval(u, v));
++
++          if(p[0] > maxU)
++              maxU = p[0];
++
++          if(p[1] > maxV)
++              maxV = p[1];
++
++          if(p[0] < minU)
++              minU = p[0];
++
++          if(p[1] < minV)
++              minV = p[1];
++
+           handles.push_back(mesh.add_vertex(p));
+       }
+   }
+@@ -139,33 +139,6 @@ void DBS::updateBaseMesh() {
+         }
+   }
+ 
+-  /*std::vector<double> coeff_u, coeff_v;
+-  for (size_t i = 0; i < resolution; ++i) {
+-      double u = (double)i / (double)(resolution - 1);
+-      bernstein(n, u, coeff_u);
+-      for (size_t j = 0; j < resolution; ++j) {
+-          double v = (double)j / (double)(resolution - 1);
+-          bernstein(m, v, coeff_v);
+-          Vector p(0.0, 0.0, 0.0);
+-          for (size_t k = 0, index = 0; k <= n; ++k)
+-              for (size_t l = 0; l <= m; ++l, ++index)
+-                  p += control_points[index] * coeff_u[k] * coeff_v[l];
+-          handles.push_back(mesh.add_vertex(p));
+-      }
+-  }
+-  for (size_t i = 0; i < resolution - 1; ++i)
+-      for (size_t j = 0; j < resolution - 1; ++j) {
+-          tri.clear();
+-          tri.push_back(handles[i * resolution + j]);
+-          tri.push_back(handles[i * resolution + j + 1]);
+-          tri.push_back(handles[(i + 1) * resolution + j]);
+-          mesh.add_face(tri);
+-          tri.clear();
+-          tri.push_back(handles[(i + 1) * resolution + j]);
+-          tri.push_back(handles[i * resolution + j + 1]);
+-          tri.push_back(handles[(i + 1) * resolution + j + 1]);
+-          mesh.add_face(tri);
+-      }*/
+   Object::updateBaseMesh(false, false);
+ }
+ 
+@@ -180,11 +153,11 @@ bool DBS::reload() {
+       degree[0] = du; degree[1] = dv;
+       num[0] = nu; num[1] = nv;
+ 
+-      knots_u.resize(nu + du);
++      knots_u.resize(nu + du + 1);
+       for(size_t idx = 0; idx <= du + nu; ++idx)
+           f >> knots_u[idx];
+ 
+-      knots_v.resize(nv + dv);
++      knots_v.resize(nv + dv + 1);
+       for(size_t idx = 0; idx <= dv + nv; ++idx)
+           f >> knots_v[idx];
+ 
+@@ -214,18 +187,16 @@ bool DBS::reload() {
+   return true;
+ }
+ 
+-/*Vector DBS::normal(BaseMesh::VertexHandle vh) const
++Vector DBS::normal(BaseMesh::VertexHandle vh) const
+ {
+   size_t d_0 = degree[0], d_1 = degree[1];
+ 
+   Geometry::BSSurface bSSurface (d_0, d_1, knots_u, knots_v, DBS::toPoint3DVec(control_points));
+ 
+-  mesh.vertex(vh);
++  double u = (mesh.point(vh)[0] - minU) / (maxU - minU);
++  double v = (mesh.point(vh)[1] - minV) / (maxV - minV);
+ 
+-  double u = mesh.point(vh)[0];
+-  double v = mesh.point(vh)[1];
+-
+-  size_t dn = 4;
++  size_t dn = 9;
+   Geometry::VectorMatrix der;
+   bSSurface.eval(u, v, dn, der);
+ 
+@@ -236,26 +207,30 @@ bool DBS::reload() {
+ 
+ double DBS::meanCurvature(BaseMesh::VertexHandle vh) const
+ {
++  //return Object::meanCurvature(vh);
+   size_t d_0 = degree[0], d_1 = degree[1];
+ 
+   Geometry::BSSurface bSSurface (d_0, d_1, knots_u, knots_v, DBS::toPoint3DVec(control_points));
+ 
+-  mesh.vertex(vh);
+-
+-  double u = mesh.point(vh)[0];
+-  double v = mesh.point(vh)[1];
++  float u = (mesh.point(vh)[0] - minU) / (maxU - minU);
++  float v = (mesh.point(vh)[1] - minV) / (maxV - minV);
+ 
+   size_t dn = 9;
+   Geometry::VectorMatrix der;
+   bSSurface.eval(u, v, dn, der);
+ 
+-  double k1 = ((toVec3D(der[1][0]) % toVec3D(der[2][0])).length()) /
+-              (toVec3D(der[1][0]).length() * toVec3D(der[1][0]).length() * toVec3D(der[1][0]).length());
+-  double k2 = ((toVec3D(der[0][1]) % toVec3D(der[0][2])).length()) /
+-              (toVec3D(der[0][1]).length() * toVec3D(der[0][1]).length() * toVec3D(der[0][1]).length());
++  float E = dot(toVec3D(der[1][0]), toVec3D(der[1][0]));
++  float F = dot(toVec3D(der[1][0]), toVec3D(der[0][1]));
++  float G = dot(toVec3D(der[0][1]), toVec3D(der[0][1]));
++
++  Vector n = this->normal(vh);
+ 
+-  return (k1 + k2) / 2.0;
+-}*/
++  float L = dot(toVec3D(der[2][0]), n);
++  float M = dot(toVec3D(der[1][1]), n);
++  float N = dot(toVec3D(der[0][2]), n);
++
++  return (N * E - 2.0 * M * F + L * G) / (2.0 * (E * G - F * F));
++}
+ 
+ DBS::~DBS()
+ {
+@@ -306,8 +281,6 @@ void DBS::calcControlPoints()
+   const double minDelta = 0.0001;
+   bool done = false;
+ 
+-  std::vector<std::vector<Vector>> p = control_points_matrix;
+-
+   while(!done && iter < maxIter)
+   {
+       for(size_t i = 1; i < num[0] - 1; ++i) // u
+@@ -358,15 +331,15 @@ void DBS::calcControlPoints()
+             double delta_plus_v     = (gamma_jp1_v - gamma_j_v) / (gamma_jp1_v - gamma_jm1_v);
+ 
+ 
+-            Vector P_1 =    delta_plus_u * p[i - 1][j] +
+-                            delta_minus_u * p[i + 1][j] +
+-                            delta_plus_v * p[i][j - 1] +
+-                            delta_minus_v * p[i][j + 1];
++            Vector P_1 =    delta_plus_u * control_points_matrix[i - 1][j] +
++                            delta_minus_u * control_points_matrix[i + 1][j] +
++                            delta_plus_v * control_points_matrix[i][j - 1] +
++                            delta_minus_v * control_points_matrix[i][j + 1];
+ 
+-            Vector P_2 =    delta_plus_u * delta_plus_v * p[i - 1][j - 1] +
+-                            delta_plus_u * delta_minus_v * p[i - 1][j + 1] +
+-                            delta_minus_u * delta_plus_v * p[i + 1][j - 1] +
+-                            delta_minus_u * delta_minus_v * p[i + 1][j + 1];
++            Vector P_2 =    delta_plus_u * delta_plus_v * control_points_matrix[i - 1][j - 1] +
++                            delta_plus_u * delta_minus_v * control_points_matrix[i - 1][j + 1] +
++                            delta_minus_u * delta_plus_v * control_points_matrix[i + 1][j - 1] +
++                            delta_minus_u * delta_minus_v * control_points_matrix[i + 1][j + 1];
+ 
+ 
+             Vector P = fullness * P_1 + (1.0 - 2.0 * fullness) * P_2;
+@@ -380,47 +353,17 @@ void DBS::calcControlPoints()
+ 
+         }
+       }
+-      p = control_points_matrix;
+       ++iter;
+   }
+ 
+-  /*int max = (n[0] - 1) + (n[1] - 1);
+-  for(int s = 0; s <= max ; ++s)
+-  {
+-      int i = 0;
+-      while(i <= s && i < n[0])
+-      {
+-        int j = s - i;
+-        control_points.push_back(control_points_matrix[i][j]);
+-
+-        if (i == n[0] - 1)
+-          break;
+-
+-        ++i;
+-      }
+-
+-      ++s;
+-
+-      if(s > max)
+-        break;
+-
+-      if(i < n[0] - 1)
+-        ++i;
+-
+-      while(i >= 0)
+-      {
+-        int j = s - i;
+-        control_points.push_back(control_points_matrix[i][j]);
+-        --i;
+-      }
+-  }*/
+ 
+   control_points.clear();
+   innerPoint.clear();
+   int idx = 0;
+-  for(size_t j = 0; j < num[1]; ++j)
+-  {
++
+   for(size_t i = 0; i < num[0]; ++i)
++  {
++      for(size_t j = 0; j < num[1]; ++j)
+       {
+         control_points.push_back(control_points_matrix[i][j]);
+         if(i != 0 && i != num[0] - 1 && j != 0 && j != num[1] - 1)
+diff --git a/dbs.hh b/dbs.hh
+index c7b1130..bbec3b6 100644
+--- a/dbs.hh
++++ b/dbs.hh
+@@ -6,13 +6,6 @@
+ #include "object.hh"
+ 
+ 
+-// A programot nem debuggolva futtatva sajnos idonkent elszall, mivel debuggolva nem tortent ilyen ezert nem tudtam kideriteni az okat.
+-// A henger tesztfile benyitasanal problemakba utkoztem, a megadott fokszammal es csomovektorokkal nem jelenitett meg semmit,
+-// a hiba a spline felulet szamolasanal van, de nem talaltam ra megoldast.
+-// A fullness allitas nagy (0.7 es tobb) erteknel nem az elvart valtozast eredmenyezi, a belso kontrollpontok szamolasaban
+-// tobbszori ellenorzesre sem talaltam meg a hibat, ugyhogy sajnos nem talaltam meg ennek az okat.
+-
+-
+ class DBS : public Object
+ {
+ public:
+@@ -25,8 +18,8 @@ public:
+     virtual void updateBaseMesh() override;
+     virtual bool reload() override;
+ 
+-    //virtual Vector normal(BaseMesh::VertexHandle vh) const override;
+-    //virtual double meanCurvature(BaseMesh::VertexHandle vh) const override;
++    virtual Vector normal(BaseMesh::VertexHandle vh) const override;
++    virtual double meanCurvature(BaseMesh::VertexHandle vh) const override;
+ 
+     virtual ~DBS();
+ 
+@@ -40,6 +33,11 @@ private:
+     std::vector<Vector> control_points;
+     std::vector<std::vector<Vector>> control_points_matrix;
+ 
++    float maxU = 0;
++    float minU;
++    float maxV = 0;
++    float minV;
++
+ 
+ private:
+     void calcControlPoints();

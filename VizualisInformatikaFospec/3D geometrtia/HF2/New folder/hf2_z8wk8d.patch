@@ -1,0 +1,194 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 48b3050..166f84a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,13 +20,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ 
+ if(CMAKE_COMPILER_IS_GNUCXX)
+   set(CMAKE_CXX_FLAGS "-Wall -fPIC -Wno-reorder")
+-  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -DDEBUG -fsanitize=address")
++  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -DDEBUG")
+   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -DNDEBUG")
+ endif(CMAKE_COMPILER_IS_GNUCXX)
+ 
+ set(geo_HEADERS # headers processed by MOC
+   viewer.hh
+   window.hh
++  geometry.hh
++  dbs.hh
+   )
+ 
+ set(CMAKE_AUTORCC ON)
+@@ -60,6 +62,10 @@ add_executable(geo-framework WIN32
+   viewer.cc
+   visualization.cc
+   window.cc
++  bspline.cc
++  trimesh.cc
++  vector.cc
++  dbs.cc
+   )
+ 
+ if(WITH_JET_FITTING)
+diff --git a/dbs.cpp b/dbs.cpp
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/dbs.h b/dbs.h
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/viewer.cc b/viewer.cc
+index 647f1c5..8b0de95 100644
+--- a/viewer.cc
++++ b/viewer.cc
+@@ -2,7 +2,9 @@
+ 
+ #include "bezier.hh"
+ #include "mesh.hh"
++#include "dbs.hh"
+ #include "viewer.hh"
++#include "dbs.hh"
+ 
+ Viewer::Viewer(QWidget *parent) : QGLViewer(parent) {
+   setSelectRegionWidth(10);
+@@ -57,6 +59,18 @@ void Viewer::setSlicingScaling(double scaling) {
+   vis.slicing_scaling = scaling;
+ }
+ 
++double Viewer::getFullness() const
++{
++  return vis.fullness;
++}
++
++void Viewer::setFullness(double fullness)
++{
++  vis.fullness = fullness;
++  //DBS::fullness = fullness;
++  update();
++}
++
+ void Viewer::deleteObjects() {
+   objects.clear();
+ }
+@@ -65,6 +79,8 @@ bool Viewer::open(std::string filename) {
+   std::shared_ptr<Object> surface;
+   if (filename.ends_with(".bzr"))
+     surface = std::make_shared<Bezier>(filename);
++  else if (filename.ends_with(".dbs"))
++      surface = std::make_shared<DBS>(filename);
+   else
+     surface = std::make_shared<Mesh>(filename);
+   if (!surface->valid())
+diff --git a/viewer.hh b/viewer.hh
+index 1e475c2..121c8c8 100644
+--- a/viewer.hh
++++ b/viewer.hh
+@@ -20,6 +20,8 @@ public:
+   void setSlicingDir(double x, double y, double z);
+   double getSlicingScaling() const;
+   void setSlicingScaling(double scaling);
++  double getFullness () const;
++  void setFullness (double fullness);
+   void deleteObjects();
+   bool open(std::string filename);
+ 
+diff --git a/visualization.hh b/visualization.hh
+index b88bf87..ba9a274 100644
+--- a/visualization.hh
++++ b/visualization.hh
+@@ -32,6 +32,9 @@ struct Visualization {
+   Vector slicing_dir;
+   double slicing_scaling;
+ 
++  // DBS
++  double fullness = 0.5;
++
+   // Textures
+   static GLuint isophote_texture, environment_texture, slicing_texture;
+   GLuint current_isophote_texture;
+diff --git a/window.cc b/window.cc
+index 0f9928e..cb31155 100644
+--- a/window.cc
++++ b/window.cc
+@@ -47,6 +47,10 @@ Window::Window(QApplication *parent) :
+   slicingAction->setStatusTip(tr("Set contouring direction and scaling"));
+   connect(slicingAction, &QAction::triggered, this, &Window::setSlicing);
+ 
++  auto fullnessAction = new QAction(tr("Set &fullness parameter"), this);
++  fullnessAction->setStatusTip(tr("Set default B-Spline fullness parameter"));
++  connect(fullnessAction, &QAction::triggered, this, &Window::setFullness);
++
+   auto fileMenu = menuBar()->addMenu(tr("&File"));
+   fileMenu->addAction(openAction);
+   fileMenu->addAction(importAction);
+@@ -56,14 +60,16 @@ Window::Window(QApplication *parent) :
+   visMenu->addAction(cutoffAction);
+   visMenu->addAction(rangeAction);
+   visMenu->addAction(slicingAction);
++  visMenu->addAction(fullnessAction);
+ }
+ 
+ void Window::open(bool clear_others) {
+   auto filename =
+     QFileDialog::getOpenFileName(this, tr("Open File"), last_directory,
+-                                 tr("Readable files (*.obj *.ply *.stl *.bzr);;"
++                                 tr("Readable files (*.obj *.ply *.stl *.bzr *.dbs);;"
+                                     "Mesh (*.obj *.ply *.stl);;"
+                                     "Bézier surface (*.bzr);;"
++                                    "default B-spline (*.dbs);;"
+                                     "All files (*.*)"));
+   if (filename.isEmpty())
+     return;
+@@ -197,6 +203,41 @@ void Window::setSlicing() {
+   }
+ }
+ 
++void Window::setFullness()
++{
++  auto dlg = std::make_unique<QDialog>(this);
++  auto *hb1    = new QHBoxLayout,
++      *hb2    = new QHBoxLayout;
++  auto *vb     = new QVBoxLayout;
++  auto *text_s = new QLabel(tr("Fullness:"));
++  auto *sb_s   = new QDoubleSpinBox;
++  auto *cancel = new QPushButton(tr("Cancel"));
++  auto *ok     = new QPushButton(tr("Ok"));
++
++  sb_s->setDecimals(2);
++  sb_s->setRange(0, 1);
++  sb_s->setSingleStep(0.01);
++  sb_s->setValue(viewer->getFullness());
++  connect(cancel, &QPushButton::pressed, dlg.get(), &QDialog::reject);
++  connect(ok,     &QPushButton::pressed, dlg.get(), &QDialog::accept);
++  ok->setDefault(true);
++
++  hb1->addWidget(text_s);
++  hb1->addWidget(sb_s);
++  hb2->addWidget(cancel);
++  hb2->addWidget(ok);
++  vb->addLayout(hb1);
++  vb->addLayout(hb2);
++
++  dlg->setWindowTitle(tr("Set fullness"));
++  dlg->setLayout(vb);
++
++  if(dlg->exec() == QDialog::Accepted) {
++    viewer->setFullness(sb_s->value());
++    viewer->update();
++  }
++}
++
+ void Window::startComputation(QString message) {
+   statusBar()->showMessage(message);
+   progress->setValue(0);
+diff --git a/window.hh b/window.hh
+index bd9b5ef..5b85542 100644
+--- a/window.hh
++++ b/window.hh
+@@ -18,6 +18,7 @@ private slots:
+   void setCutoff();
+   void setRange();
+   void setSlicing();
++  void setFullness();
+   void startComputation(QString message);
+   void midComputation(int percent);
+   void endComputation();
